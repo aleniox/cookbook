@@ -1,52 +1,98 @@
-// lib/screens/recipe_list_screen.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/recipe.dart';
-import 'recipe_detail_screen.dart';
-import '../widgets/widget_image.dart';
+import '../services/recipe_service.dart';
+import 'add_recipe_screen.dart';
 
-// lib/screens/recipe_list_screen.dart (Chỉ sửa class RecipeListScreen)
-class RecipeListScreen extends StatelessWidget {
-  // const RecipeListScreen({super.key});
+class RecipeListScreen extends StatefulWidget {
   final Function(Recipe) onPlanAdded;
-  
-  const RecipeListScreen({super.key, required this.onPlanAdded}); // CẬP NHẬT CONSTRUCTOR
+  const RecipeListScreen({super.key, required this.onPlanAdded});
+
+  @override
+  State<RecipeListScreen> createState() => _RecipeListScreenState();
+}
+
+class _RecipeListScreenState extends State<RecipeListScreen> {
+  List<Recipe> _recipes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecipes();
+  }
+
+  void _loadRecipes() {
+    setState(() {
+      _recipes = RecipeService.getAllRecipes();
+    });
+  }
+
+  void _openAddRecipeScreen() async {
+    final added = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddRecipeScreen()),
+    );
+
+    if (added == true) _loadRecipes();
+  }
+
+  void _deleteRecipe(Recipe recipe) async {
+    // Xóa ảnh local nếu có
+    if (recipe.imageUrl.isNotEmpty && File(recipe.imageUrl).existsSync()) {
+      File(recipe.imageUrl).deleteSync();
+    }
+    await recipe.delete();
+    _loadRecipes();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Bỏ Scaffold và chỉ trả về nội dung Body
-    return Column(
+    return Stack(
       children: [
-        // Thêm AppBar thủ công nếu muốn
-        AppBar(
-          title: const Text('Danh sách Công thức', style: TextStyle(fontWeight: FontWeight.bold)),
-          // elevation: 0, // Đã được set trong theme
-          automaticallyImplyLeading: true, // Hiển thị icon menu
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: mockRecipes.length,
-            itemBuilder: (context, index) {
-              final recipe = mockRecipes[index];
-              return RecipeCard(
-                recipe: recipe, 
-                onPlanAdded: onPlanAdded,
-              );
-            },
+        // Nội dung danh sách
+        _recipes.isEmpty
+            ? const Center(child: Text('Chưa có công thức nào.'))
+            : ListView.builder(
+                padding: const EdgeInsets.only(bottom: 80), // tránh FAB che
+                itemCount: _recipes.length,
+                itemBuilder: (context, index) {
+                  final recipe = _recipes[index];
+                  return RecipeCard(
+                    recipe: recipe,
+                    onPlanAdded: widget.onPlanAdded,
+                    onDelete: () => _deleteRecipe(recipe),
+                  );
+                },
+              ),
+
+        // Nút thêm công thức nổi
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: FloatingActionButton(
+            onPressed: _openAddRecipeScreen,
+            child: const Icon(Icons.add),
+            tooltip: 'Thêm Công Thức',
           ),
         ),
       ],
     );
   }
 }
-// lib/screens/recipe_list_screen.dart (Thay thế RecipeCard bằng StatefulWidget)
 
+/// =======================
+/// RecipeCard (tối ưu)
+/// =======================
 class RecipeCard extends StatefulWidget {
   final Recipe recipe;
   final Function(Recipe) onPlanAdded;
+  final VoidCallback? onDelete;
 
   const RecipeCard({
-    super.key, 
-    required this.recipe, 
+    super.key,
+    required this.recipe,
     required this.onPlanAdded,
+    this.onDelete,
   });
 
   @override
@@ -54,8 +100,22 @@ class RecipeCard extends StatefulWidget {
 }
 
 class _RecipeCardState extends State<RecipeCard> {
-  // Trạng thái để quản lý việc mở rộng/thu gọn danh sách nguyên liệu
   bool _isExpanded = false;
+
+  Widget loadImage(String path, {double? height, BoxFit? fit}) {
+    if (path.startsWith('http')) {
+      return Image.network(path, height: height, fit: fit);
+    } else if (path.isNotEmpty && File(path).existsSync()) {
+      return Image.file(File(path), height: height, fit: fit);
+    } else {
+      return Container(
+        height: height ?? 100,
+        width: height ?? 100,
+        color: Colors.grey[300],
+        child: const Icon(Icons.restaurant_menu, size: 50),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,37 +136,26 @@ class _RecipeCardState extends State<RecipeCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Phần chính của thẻ (Ảnh và Mô tả)
+          // Ảnh + thông tin
           InkWell(
             borderRadius: BorderRadius.circular(15.0),
             onTap: () {
-              // Khi nhấn vào phần chính, chuyển sang màn hình chi tiết
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RecipeDetailScreen(
-                    recipe: widget.recipe,
-                    onPlanAdded: widget.onPlanAdded,
-                  ),
-                ),
-              );
+              // TODO: mở màn hình chi tiết
             },
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Ảnh công thức
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10.0),
                     child: loadImage(
                       widget.recipe.imageUrl,
-                      height: 100.0,
+                      height: 100,
                       fit: BoxFit.cover,
                     ),
                   ),
                   const SizedBox(width: 16.0),
-                  // 2. Thông tin công thức
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,7 +165,7 @@ class _RecipeCardState extends State<RecipeCard> {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF333333)
+                            color: Color(0xFF333333),
                           ),
                         ),
                         const SizedBox(height: 4.0),
@@ -124,16 +173,26 @@ class _RecipeCardState extends State<RecipeCard> {
                           widget.recipe.description,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 8.0),
                         Row(
                           children: [
-                            const Icon(Icons.access_time, size: 14, color: Color(0xFF6D9886)),
+                            const Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: Color(0xFF6D9886),
+                            ),
                             const SizedBox(width: 4),
                             Text(
-                              '${widget.recipe.durationInMinutes} phút', 
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)
+                              '${widget.recipe.durationInMinutes} phút',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
@@ -144,11 +203,30 @@ class _RecipeCardState extends State<RecipeCard> {
               ),
             ),
           ),
-          
-          // Thanh gạch ngang (Divider)
-          const Divider(height: 0), 
-
-          // Nút để mở/đóng danh sách nguyên liệu
+          const Divider(height: 0),
+          // Nút thêm/xóa
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () => widget.onPlanAdded(widget.recipe),
+                  icon: const Icon(
+                    Icons.add_shopping_cart,
+                    color: Colors.green,
+                  ),
+                  label: const Text('Thêm vào kế hoạch'),
+                ),
+                const Spacer(),
+                if (widget.onDelete != null)
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: widget.onDelete,
+                  ),
+              ],
+            ),
+          ),
+          // Nút mở/thu checklist
           InkWell(
             onTap: () {
               setState(() {
@@ -156,27 +234,32 @@ class _RecipeCardState extends State<RecipeCard> {
               });
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(
+                vertical: 8.0,
+                horizontal: 16.0,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    _isExpanded ? 'Thu gọn Nguyên liệu' : 'Xem Nguyên liệu (Checklist)',
+                    _isExpanded
+                        ? 'Thu gọn Nguyên liệu'
+                        : 'Xem Nguyên liệu (Checklist)',
                     style: TextStyle(
                       color: Theme.of(context).primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Icon(
-                    _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    _isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
                     color: Theme.of(context).primaryColor,
                   ),
                 ],
               ),
             ),
           ),
-
-          // Phần mở rộng: Danh sách Checklist
           if (_isExpanded)
             IngredientChecklist(ingredients: widget.recipe.ingredients),
         ],
@@ -184,12 +267,12 @@ class _RecipeCardState extends State<RecipeCard> {
     );
   }
 }
-// lib/screens/recipe_list_screen.dart (Thêm vào cuối file)
 
-// Widget mới để hiển thị và quản lý trạng thái checklist của nguyên liệu
+/// =======================
+/// Checklist nguyên liệu
+/// =======================
 class IngredientChecklist extends StatefulWidget {
   final List<IngredientItem> ingredients;
-
   const IngredientChecklist({super.key, required this.ingredients});
 
   @override
@@ -197,7 +280,6 @@ class IngredientChecklist extends StatefulWidget {
 }
 
 class _IngredientChecklistState extends State<IngredientChecklist> {
-  // Hàm này sẽ cập nhật trạng thái của IngredientItem và gọi setState
   void _toggleChecked(IngredientItem item) {
     setState(() {
       item.isChecked = !item.isChecked;
@@ -220,26 +302,24 @@ class _IngredientChecklistState extends State<IngredientChecklist> {
             ),
           ),
         ),
-        // Sử dụng ListView.builder để hiển thị danh sách các CheckboxListTile
         ListView.builder(
-          shrinkWrap: true, // Quan trọng: Đảm bảo nó chỉ chiếm không gian cần thiết
-          physics: const NeverScrollableScrollPhysics(), // Ngăn cuộn để không xung đột với cuộn của màn hình cha
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           itemCount: widget.ingredients.length,
           itemBuilder: (context, index) {
             final item = widget.ingredients[index];
             return CheckboxListTile(
-              controlAffinity: ListTileControlAffinity.leading, // Checkbox nằm bên trái
+              controlAffinity: ListTileControlAffinity.leading,
               dense: true,
               value: item.isChecked,
-              onChanged: (bool? newValue) {
-                _toggleChecked(item);
-              },
+              onChanged: (bool? newValue) => _toggleChecked(item),
               title: Text(
                 item.name,
                 style: TextStyle(
                   fontSize: 14,
-                  // Gạch ngang nếu đã được chọn (checked)
-                  decoration: item.isChecked ? TextDecoration.lineThrough : null,
+                  decoration: item.isChecked
+                      ? TextDecoration.lineThrough
+                      : null,
                   color: item.isChecked ? Colors.grey : Colors.black87,
                 ),
               ),
