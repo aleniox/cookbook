@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'screens/recipe_list_screen.dart'; 
 import 'screens/shopping_list_screen.dart'; // Đảm bảo đã import
 import 'models/recipe.dart';
+import 'helper/database_helper.dart';
 
 void main() {
   runApp(const RecipeApp());
@@ -51,8 +52,42 @@ class _MainAppLayoutState extends State<MainAppLayout> {
   //   const RecipeListScreen(), // Index 0
   //   ShoppingListScreen(recipes: mockRecipes), // Index 1
   // ];
+  List<Recipe> _recipes = []; 
+  bool _isLoading = true; // Thêm trạng thái loading
 
+  @override
+  void initState() {
+    super.initState();
+    _loadRecipes();
+  }
 
+  Future<void> _loadRecipes() async {
+    // Thay thế dữ liệu giả bằng dữ liệu từ DB
+    final loadedRecipes = await DatabaseHelper.instance.readAllRecipes();
+  if (loadedRecipes.isEmpty) {
+      print('Database trống. Đang thêm dữ liệu mẫu...');
+      await _seedDatabase();
+      // Tải lại sau khi thêm mẫu
+      final seededRecipes = await DatabaseHelper.instance.readAllRecipes();
+      setState(() {
+        _recipes = seededRecipes;
+        _isLoading = false;
+      });
+    } else {
+      // Dữ liệu đã có, chỉ cần cập nhật trạng thái
+      setState(() {
+        _recipes = loadedRecipes;
+        _isLoading = false;
+      });
+    }
+  }
+  Future<void> _seedDatabase() async {
+    // Sử dụng mockRecipes (từ lib/models/recipe.dart)
+    for (var recipe in mockRecipes) {
+      // Lưu từng công thức vào DB
+      await DatabaseHelper.instance.createRecipe(recipe);
+    }
+  }
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -70,15 +105,50 @@ class _MainAppLayoutState extends State<MainAppLayout> {
     }
   }
 
+  void _reloadRecipes() {
+    setState(() {
+      _isLoading = true; // Set loading để hiển thị chỉ báo
+      // Cần xóa các công thức đã lên kế hoạch để tránh lỗi ID khi reload
+      _plannedRecipes.clear(); 
+    });
+    // Gọi lại hàm load chính
+    _loadRecipes(); 
+  }
+
+// void _removeRecipeFromPlan(Recipe recipe) {
+//     setState(() {
+//       _plannedRecipes.remove(recipe);
+//     });
+//   }
+
   @override
   Widget build(BuildContext context) {
     // Scaffold sẽ bao bọc toàn bộ
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Color(0xFF6D9886)),
+              SizedBox(height: 16),
+              Text('Đang tải công thức từ Database...', style: TextStyle(fontSize: 16)),
+            ],
+          ),
+        ),
+      );
+    }
     final List<Widget> _widgetOptions = <Widget>[
       // Truyền hàm callback xuống RecipeListScreen để nó tiếp tục truyền xuống màn hình chi tiết
-      RecipeListScreen(onPlanAdded: _addRecipeToPlan), // Index 0
-      
-      // Truyền danh sách công thức đã lên kế hoạch
-      ShoppingListScreen(recipes: _plannedRecipes), // Index 1
+      RecipeListScreen(
+        recipes: _recipes, 
+        onPlanAdded: _addRecipeToPlan,
+        onRecipeAdded: _reloadRecipes, // TRUYỀN CALLBACK RELOAD
+      ),
+      ShoppingListScreen(
+        recipes: _plannedRecipes,
+        // onPlanRemoved: _removeRecipeFromPlan,
+      ),
     ];
     return Scaffold(
       // Thanh bar trái (Drawer)

@@ -3,37 +3,73 @@ import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import 'recipe_detail_screen.dart';
 import '../widgets/widget_image.dart';
+import '../helper/database_helper.dart';
+import 'recipe_form_screen.dart';
 
 // lib/screens/recipe_list_screen.dart (Chỉ sửa class RecipeListScreen)
 class RecipeListScreen extends StatelessWidget {
-  // const RecipeListScreen({super.key});
+  // ... (Các trường giữ nguyên)
+  final List<Recipe> recipes; 
   final Function(Recipe) onPlanAdded;
+  // Thêm một callback để làm mới dữ liệu sau khi thêm
+  final VoidCallback onRecipeAdded; // THÊM TRƯỜNG NÀY
   
-  const RecipeListScreen({super.key, required this.onPlanAdded}); // CẬP NHẬT CONSTRUCTOR
+  const RecipeListScreen({
+    super.key, 
+    required this.recipes, 
+    required this.onPlanAdded,
+    required this.onRecipeAdded, // CẬP NHẬT CONSTRUCTOR
+  }); 
+
+  // Hàm điều hướng và chờ kết quả làm mới
+  void _navigateToAddRecipe(BuildContext context) async {
+    final shouldRefresh = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RecipeFormScreen(),
+      ),
+    );
+    // Nếu màn hình Form trả về true, gọi callback làm mới
+    if (shouldRefresh == true) {
+      onRecipeAdded();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Bỏ Scaffold và chỉ trả về nội dung Body
-    return Column(
-      children: [
-        // Thêm AppBar thủ công nếu muốn
-        AppBar(
-          title: const Text('Danh sách Công thức', style: TextStyle(fontWeight: FontWeight.bold)),
-          // elevation: 0, // Đã được set trong theme
-          automaticallyImplyLeading: true, // Hiển thị icon menu
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: mockRecipes.length,
-            itemBuilder: (context, index) {
-              final recipe = mockRecipes[index];
-              return RecipeCard(
-                recipe: recipe, 
-                onPlanAdded: onPlanAdded,
-              );
-            },
+    return Scaffold( // Bọc trong Scaffold để có thể dùng FAB
+      body: Column(
+        children: [
+          // ... (AppBar giữ nguyên)
+          AppBar(
+            title: const Text('Danh sách Công thức', style: TextStyle(fontWeight: FontWeight.bold)),
+            automaticallyImplyLeading: true,
           ),
-        ),
-      ],
+          Expanded(
+            // ... (ListView.builder giữ nguyên)
+            child: recipes.isEmpty
+                ? const Center(child: Text('Chưa có công thức nào được lưu.'))
+                : ListView.builder(
+                    itemCount: recipes.length,
+                    itemBuilder: (context, index) {
+                      // ... (RecipeCard giữ nguyên)
+                      final recipe = recipes[index];
+                      return RecipeCard(
+                        recipe: recipe, 
+                        onPlanAdded: onPlanAdded,
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+      
+      // *** FLOATING ACTION BUTTON MỚI ***
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _navigateToAddRecipe(context),
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 }
@@ -198,10 +234,14 @@ class IngredientChecklist extends StatefulWidget {
 
 class _IngredientChecklistState extends State<IngredientChecklist> {
   // Hàm này sẽ cập nhật trạng thái của IngredientItem và gọi setState
-  void _toggleChecked(IngredientItem item) {
+  void _toggleChecked(IngredientItem item) async {
     setState(() {
       item.isChecked = !item.isChecked;
     });
+    if (item.id != null) {
+      await DatabaseHelper.instance.updateIngredient(item);
+      print('Đã cập nhật trạng thái checklist cho ingredient ID: ${item.id}');
+    }
   }
 
   @override
