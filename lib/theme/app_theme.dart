@@ -12,7 +12,6 @@ class AppTheme {
     seedColor: primaryColor,
     brightness: Brightness.light,
   ).copyWith(
-    background: const Color(0xFFF7F7F7),
     primary: primaryColor,
     secondary: accentColor,
     surface: Colors.white,

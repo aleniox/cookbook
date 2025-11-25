@@ -72,8 +72,8 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
           right: 16,
           child: FloatingActionButton(
             onPressed: _openAddRecipeScreen,
-            child: const Icon(Icons.add),
             tooltip: 'Thêm Công Thức',
+            child: const Icon(Icons.add),
           ),
         ),
       ],

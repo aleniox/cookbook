@@ -123,7 +123,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                 ),
             ],
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -165,7 +165,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                 ),
             ],
           );
-        }).toList(),
+        }),
       ],
     );
   }
