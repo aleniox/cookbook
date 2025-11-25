@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 import 'add_recipe_screen.dart';
+import '../helper/database_helper.dart';
 
 class RecipeListScreen extends StatefulWidget {
   final Function(Recipe) onPlanAdded;
@@ -280,7 +281,7 @@ class IngredientChecklist extends StatefulWidget {
 }
 
 class _IngredientChecklistState extends State<IngredientChecklist> {
-  void _toggleChecked(IngredientItem item) {
+  void _toggleChecked(IngredientItem item) async  {
     setState(() {
       item.isChecked = !item.isChecked;
     });
