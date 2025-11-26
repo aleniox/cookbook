@@ -4,28 +4,45 @@ import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 import 'add_recipe_screen.dart';
 import '../helper/database_helper.dart';
+import 'recipe_detail_screen.dart';
 
 class RecipeListScreen extends StatefulWidget {
   final Function(Recipe) onPlanAdded;
-  const RecipeListScreen({super.key, required this.onPlanAdded});
+
+  // Thêm tham số optional để nhận danh sách công thức từ ngoài
+  final List<Recipe>? initialRecipes;
+
+  const RecipeListScreen({
+    super.key,
+    required this.onPlanAdded,
+    this.initialRecipes,
+  });
 
   @override
   State<RecipeListScreen> createState() => _RecipeListScreenState();
 }
 
 class _RecipeListScreenState extends State<RecipeListScreen> {
-  List<Recipe> _recipes = [];
+  late List<Recipe> _recipes; // danh sách gốc
+  late List<Recipe> _filteredRecipes; // danh sách hiển thị sau search/ lọc
+  String _searchQuery = '';
+  String? _selectedType;
 
   @override
   void initState() {
     super.initState();
-    _loadRecipes();
+    _recipes = widget.initialRecipes ?? RecipeService.getAllRecipes();
+    _filteredRecipes = List.from(_recipes);
   }
 
-  void _loadRecipes() {
-    setState(() {
-      _recipes = RecipeService.getAllRecipes();
-    });
+  // Hàm thêm công thức từ PresetRecipeScreen
+  void addRecipeFromPreset(Recipe recipe) {
+    if (!_recipes.contains(recipe)) {
+      setState(() {
+        _recipes.add(recipe);
+        _filterRecipes();
+      });
+    }
   }
 
   void _openAddRecipeScreen() async {
@@ -34,7 +51,12 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
       MaterialPageRoute(builder: (_) => const AddRecipeScreen()),
     );
 
-    if (added == true) _loadRecipes();
+    if (added == true) {
+      setState(() {
+        _recipes = RecipeService.getAllRecipes();
+        _filterRecipes();
+      });
+    }
   }
 
   void _deleteRecipe(Recipe recipe) async {
@@ -43,30 +65,167 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
       File(recipe.imageUrl).deleteSync();
     }
     await recipe.delete();
-    _loadRecipes();
+    setState(() {
+      _recipes.remove(recipe);
+      _filterRecipes();
+    });
+  }
+
+  // Hàm lọc/search danh sách
+  void _filterRecipes() {
+    setState(() {
+      _filteredRecipes = _recipes.where((recipe) {
+        final matchesSearch = recipe.title.toLowerCase().contains(
+          _searchQuery.toLowerCase(),
+        );
+        final matchesType =
+            _selectedType == null || recipe.type == _selectedType;
+        return matchesSearch && matchesType;
+      }).toList();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Nội dung danh sách
-        _recipes.isEmpty
-            ? const Center(child: Text('Chưa có công thức nào.'))
-            : ListView.builder(
-                padding: const EdgeInsets.only(bottom: 80), // tránh FAB che
-                itemCount: _recipes.length,
-                itemBuilder: (context, index) {
-                  final recipe = _recipes[index];
-                  return RecipeCard(
-                    recipe: recipe,
-                    onPlanAdded: widget.onPlanAdded,
-                    onDelete: () => _deleteRecipe(recipe),
-                  );
-                },
-              ),
+        Column(
+          children: [
+            // Search + Filter
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  // SEARCH BAR
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.search,
+                            size: 20,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              decoration: const InputDecoration(
+                                hintText: "Tìm kiếm công thức...",
+                                hintStyle: TextStyle(color: Colors.grey),
+                                border: InputBorder.none,
+                                isCollapsed: true, // giảm chiều cao input
+                              ),
+                              onChanged: (value) {
+                                _searchQuery = value;
+                                _filterRecipes();
+                              },
+                            ),
+                          ),
+                          if (_searchQuery.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                _searchQuery = "";
+                                _filterRecipes();
+                              },
+                              child: const Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Colors.grey,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
 
-        // Nút thêm công thức nổi
+                  const SizedBox(width: 10),
+
+                  // FILTER BUTTON NÂNG CẤP
+                  Container(
+                    height: 44,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: PopupMenuButton<String>(
+                      onSelected: (value) {
+                        setState(() {
+                          _selectedType = value;
+                          _filterRecipes();
+                        });
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'Đồ uống',
+                          child: Text('Đồ uống'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'Thức ăn',
+                          child: Text('Thức ăn'),
+                        ),
+                      ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _selectedType ?? 'Lọc',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          const SizedBox(width: 50),
+                          const Icon(Icons.arrow_drop_down),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Danh sách công thức
+            Expanded(
+              child: _filteredRecipes.isEmpty
+                  ? const Center(child: Text('Chưa có công thức nào.'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 80),
+                      itemCount: _filteredRecipes.length,
+                      itemBuilder: (context, index) {
+                        final recipe = _filteredRecipes[index];
+                        return RecipeCard(
+                          recipe: recipe,
+                          onPlanAdded: widget.onPlanAdded,
+                          onDelete: () => _deleteRecipe(recipe),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+
+        // Nút FAB nổi
         Positioned(
           bottom: 16,
           right: 16,
@@ -142,6 +301,15 @@ class _RecipeCardState extends State<RecipeCard> {
             borderRadius: BorderRadius.circular(15.0),
             onTap: () {
               // TODO: mở màn hình chi tiết
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RecipeDetailScreen(
+                    recipe: widget.recipe,
+                    onPlanAdded: widget.onPlanAdded,
+                  ),
+                ),
+              );
             },
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -281,7 +449,7 @@ class IngredientChecklist extends StatefulWidget {
 }
 
 class _IngredientChecklistState extends State<IngredientChecklist> {
-  void _toggleChecked(IngredientItem item) async  {
+  void _toggleChecked(IngredientItem item) async {
     setState(() {
       item.isChecked = !item.isChecked;
     });

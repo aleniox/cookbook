@@ -44,7 +44,7 @@ class IngredientItem extends HiveObject {
     return {
       if (id != null) 'id': id,
       'name': name,
-      'isChecked': isChecked ? 1 : 0,     // SQLite BOOL
+      'isChecked': isChecked ? 1 : 0, // SQLite BOOL
       'recipeId': recipeId ?? this.recipeId,
     };
   }
@@ -86,6 +86,9 @@ class Recipe extends HiveObject {
   @HiveField(6)
   int durationInMinutes;
 
+  @HiveField(7)
+  String type; // thêm trường loại: 'Đồ uống', 'Thức ăn', ...
+
   Recipe({
     this.id,
     required this.title,
@@ -94,6 +97,7 @@ class Recipe extends HiveObject {
     required this.ingredients,
     required this.steps,
     required this.durationInMinutes,
+    required this.type,
   });
 
   Recipe copyWith({
@@ -104,6 +108,7 @@ class Recipe extends HiveObject {
     List<IngredientItem>? ingredients,
     List<String>? steps,
     int? durationInMinutes,
+    String? type,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -113,6 +118,7 @@ class Recipe extends HiveObject {
       ingredients: ingredients ?? this.ingredients,
       steps: steps ?? this.steps,
       durationInMinutes: durationInMinutes ?? this.durationInMinutes,
+      type: type ?? this.type,
     );
   }
 
@@ -124,6 +130,7 @@ class Recipe extends HiveObject {
       'imageUrl': imageUrl,
       'description': description,
       'durationInMinutes': durationInMinutes,
+      'type': type,
     };
   }
 
@@ -137,6 +144,7 @@ class Recipe extends HiveObject {
       ingredients: [], // load riêng theo recipeId
       steps: [],       // load riêng nếu cần
       durationInMinutes: map['durationInMinutes'] as int,
+      type: map['type'] as String? ?? 'Khác', // default nếu chưa có
     );
   }
 }

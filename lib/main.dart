@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'screens/recipe_list_screen.dart';
 import 'screens/shopping_list_screen.dart';
+import 'screens/preset_recipe_screen.dart'; // <-- Màn hình thư viện sẵn
 import 'models/recipe.dart';
 import 'theme/app_theme.dart';
 
@@ -11,6 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Hive.initFlutter();
+  await Hive.deleteBoxFromDisk('recipes');
 
   Hive.registerAdapter(IngredientItemAdapter());
   Hive.registerAdapter(RecipeAdapter());
@@ -40,10 +42,11 @@ class MainAppLayout extends StatefulWidget {
   @override
   State<MainAppLayout> createState() => _MainAppLayoutState();
 }
-
 class _MainAppLayoutState extends State<MainAppLayout> {
-  int _selectedIndex = 0; // 0 = RecipeList, 1 = ShoppingList
+  int _selectedIndex = 0; // 0 = RecipeList, 1 = ShoppingList, 2 = PresetLibrary
+
   final List<Recipe> _plannedRecipes = [];
+  final List<Recipe> _myRecipes = []; // danh sách công thức của bạn
 
   late final List<Widget> _screens;
 
@@ -52,20 +55,39 @@ class _MainAppLayoutState extends State<MainAppLayout> {
     super.initState();
 
     _screens = [
-      RecipeListScreen(onPlanAdded: _addRecipeToPlan),
+      RecipeListScreen(
+        initialRecipes: _myRecipes,
+        onPlanAdded: _addRecipeToPlan,
+      ),
       ShoppingListScreen(recipes: _plannedRecipes),
+      PresetRecipeScreen(
+        onAddToRecipeList: _addRecipeFromPreset, // <- callback mới
+      ),
     ];
   }
 
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-    Navigator.of(context).maybePop(); // đóng drawer nếu đang mở
+  // 🔹 Thêm món ăn từ Thư viện vào danh sách công thức
+  void _addRecipeFromPreset(Recipe recipe) {
+    if (!_myRecipes.contains(recipe)) {
+      setState(() {
+        _myRecipes.add(recipe);
+        _selectedIndex = 0; // tự động chuyển sang tab danh sách công thức
+      });
+    } else {
+      // Nếu đã có, vẫn chuyển tab
+      setState(() => _selectedIndex = 0);
+    }
   }
 
   void _addRecipeToPlan(Recipe recipe) {
     if (!_plannedRecipes.contains(recipe)) {
       setState(() => _plannedRecipes.add(recipe));
     }
+  }
+
+  void _onItemTapped(int index) {
+    setState(() => _selectedIndex = index);
+    Navigator.of(context).maybePop(); // đóng drawer nếu đang mở
   }
 
   @override
@@ -75,7 +97,11 @@ class _MainAppLayoutState extends State<MainAppLayout> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _selectedIndex == 0 ? 'Danh sách Công thức' : 'Kế hoạch Mua sắm',
+          _selectedIndex == 0
+              ? 'Danh sách Công thức'
+              : _selectedIndex == 1
+                  ? 'Kế hoạch Mua sắm'
+                  : 'Thư viện Công thức',
         ),
       ),
       drawer: Drawer(
@@ -104,6 +130,12 @@ class _MainAppLayoutState extends State<MainAppLayout> {
               title: const Text('Kế hoạch Mua sắm'),
               selected: _selectedIndex == 1,
               onTap: () => _onItemTapped(1),
+            ),
+            ListTile(
+              leading: Icon(Icons.book, color: color),
+              title: const Text('Thư viện Công thức'),
+              selected: _selectedIndex == 2,
+              onTap: () => _onItemTapped(2),
             ),
           ],
         ),

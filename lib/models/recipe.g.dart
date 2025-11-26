@@ -17,19 +17,25 @@ class IngredientItemAdapter extends TypeAdapter<IngredientItem> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return IngredientItem(
-      name: fields[0] as String,
-      isChecked: fields[1] as bool,
+      id: fields[0] as int?,
+      name: fields[1] as String,
+      isChecked: fields[2] as bool,
+      recipeId: fields[3] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, IngredientItem obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(4)
       ..writeByte(0)
-      ..write(obj.name)
+      ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.isChecked);
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.isChecked)
+      ..writeByte(3)
+      ..write(obj.recipeId);
   }
 
   @override
@@ -54,31 +60,37 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Recipe(
-      title: fields[0] as String,
-      imageUrl: fields[1] as String,
-      description: fields[2] as String,
-      ingredients: (fields[3] as List).cast<IngredientItem>(),
-      steps: (fields[4] as List).cast<String>(),
-      durationInMinutes: fields[5] as int,
+      id: fields[0] as int?,
+      title: fields[1] as String,
+      imageUrl: fields[2] as String,
+      description: fields[3] as String,
+      ingredients: (fields[4] as List).cast<IngredientItem>(),
+      steps: (fields[5] as List).cast<String>(),
+      durationInMinutes: fields[6] as int,
+      type: fields[7] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, Recipe obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(8)
       ..writeByte(0)
-      ..write(obj.title)
+      ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.imageUrl)
+      ..write(obj.title)
       ..writeByte(2)
-      ..write(obj.description)
+      ..write(obj.imageUrl)
       ..writeByte(3)
-      ..write(obj.ingredients)
+      ..write(obj.description)
       ..writeByte(4)
-      ..write(obj.steps)
+      ..write(obj.ingredients)
       ..writeByte(5)
-      ..write(obj.durationInMinutes);
+      ..write(obj.steps)
+      ..writeByte(6)
+      ..write(obj.durationInMinutes)
+      ..writeByte(7)
+      ..write(obj.type);
   }
 
   @override

@@ -26,6 +26,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
+  String? _selectedType; // Loại công thức: Đồ uống, Thức ăn, ...
+
   // Chọn ảnh từ gallery
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
@@ -48,7 +50,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
 
   // Tạo Recipe và lưu vào Hive
   void _createRecipe() async {
-    if (_titleController.text.isEmpty) return;
+    if (_titleController.text.isEmpty || _selectedType == null) return;
 
     final ingredientItems = _ingredients
         .map((i) => IngredientItem(name: i))
@@ -66,6 +68,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       steps: _steps,
       durationInMinutes: int.tryParse(_durationController.text) ?? 0,
       imageUrl: imagePath,
+      type: _selectedType!, // thêm trường type
     );
 
     await RecipeService.addRecipe(recipe);
@@ -111,6 +114,24 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               controller: _durationController,
               decoration: const InputDecoration(labelText: "Thời gian (phút)"),
               keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 10),
+
+            // Loại công thức
+            DropdownButtonFormField<String>(
+              value: _selectedType,
+              decoration: const InputDecoration(labelText: "Loại công thức"),
+              items: <String>['Đồ uống', 'Thức ăn']
+                  .map((type) => DropdownMenuItem(
+                        value: type,
+                        child: Text(type),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedType = value;
+                });
+              },
             ),
             const SizedBox(height: 10),
 
@@ -160,10 +181,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                     controller: _stepController,
                     decoration: const InputDecoration(
                       labelText: "Bước nấu ăn",
-                      // border: OutlineInputBorder(),
                     ),
-                    minLines: 1, // số dòng tối thiểu
-                    maxLines: 5, // số dòng tối đa
+                    minLines: 1,
+                    maxLines: 5,
                     keyboardType: TextInputType.multiline,
                   ),
                 ),

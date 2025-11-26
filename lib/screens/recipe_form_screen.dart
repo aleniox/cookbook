@@ -16,14 +16,18 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _durationController = TextEditingController();
-  final _imageUrlController = TextEditingController(text: 'assets/images/placeholder.jpg'); // Placeholder mặc định
-  
+  final _imageUrlController =
+      TextEditingController(text: 'assets/images/placeholder.jpg');
+
   // Danh sách các nguyên liệu đang được nhập
   final List<TextEditingController> _ingredientControllers = [TextEditingController()];
-  
+
   // Danh sách các bước làm (Steps)
   final List<TextEditingController> _stepControllers = [TextEditingController()];
 
+  // Loại công thức
+  String? _selectedType;
+  final List<String> _recipeTypes = ['Đồ ăn', 'Đồ uống'];
 
   @override
   void dispose() {
@@ -31,56 +35,57 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     _descriptionController.dispose();
     _durationController.dispose();
     _imageUrlController.dispose();
-    for (var controller in _ingredientControllers) {
-      controller.dispose();
-    }
-    for (var controller in _stepControllers) {
-      controller.dispose();
-    }
+    for (var c in _ingredientControllers) c.dispose();
+    for (var c in _stepControllers) c.dispose();
     super.dispose();
   }
-  
+
   // --- HÀM THAO TÁC DB: LƯU CÔNG THỨC MỚI ---
   void _saveRecipe() async {
     if (_formKey.currentState!.validate()) {
-      // 1. Trích xuất dữ liệu
+      if (_selectedType == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng chọn loại công thức!')),
+        );
+        return;
+      }
+
       final newRecipe = Recipe(
         title: _titleController.text,
-        imageUrl: _imageUrlController.text.isNotEmpty ? _imageUrlController.text : 'assets/images/placeholder.jpg',
+        imageUrl: _imageUrlController.text.isNotEmpty
+            ? _imageUrlController.text
+            : 'assets/images/placeholder.jpg',
         description: _descriptionController.text,
         durationInMinutes: int.tryParse(_durationController.text) ?? 0,
-        
-        // 2. Chuyển đổi List<TextEditingController> thành List<IngredientItem> và List<String>
+        type: _selectedType!,
         ingredients: _ingredientControllers
             .where((c) => c.text.isNotEmpty)
             .map((c) => IngredientItem(name: c.text))
             .toList(),
-            
         steps: _stepControllers
             .where((c) => c.text.isNotEmpty)
             .map((c) => c.text)
             .toList(),
       );
 
-      // 3. Gọi DB Helper để tạo công thức mới
       await DatabaseHelper.instance.createRecipe(newRecipe);
-      
-      // 4. Thông báo và quay lại
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đã lưu công thức mới thành công!')),
         );
-        Navigator.pop(context, true); // Trả về true để báo hiệu cần làm mới
+        Navigator.pop(context, true);
       }
     }
   }
-  
-  // --- HÀM XỬ LÝ UI ---
+
+  // --- UI Fields ---
   Widget _buildIngredientFields() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Nguyên liệu:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const Text('Nguyên liệu:',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ..._ingredientControllers.asMap().entries.map((entry) {
           int index = entry.key;
           TextEditingController controller = entry.value;
@@ -90,11 +95,9 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                 child: TextFormField(
                   controller: controller,
                   decoration: InputDecoration(
-                    labelText: 'Nguyên liệu ${index + 1} (vd: 500g ức gà)',
-                    border: const UnderlineInputBorder(),
-                  ),
+                      labelText: 'Nguyên liệu ${index + 1} (vd: 500g ức gà)',
+                      border: const UnderlineInputBorder()),
                   validator: (value) {
-                    // Yêu cầu ít nhất 1 nguyên liệu đầu tiên
                     if (index == 0 && (value == null || value.isEmpty)) {
                       return 'Cần ít nhất một nguyên liệu.';
                     }
@@ -104,36 +107,35 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
               ),
               if (index == _ingredientControllers.length - 1)
                 IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.green),
-                  onPressed: () {
-                    setState(() {
-                      _ingredientControllers.add(TextEditingController());
-                    });
-                  },
-                ),
+                    icon: const Icon(Icons.add_circle, color: Colors.green),
+                    onPressed: () {
+                      setState(() {
+                        _ingredientControllers.add(TextEditingController());
+                      });
+                    }),
               if (index > 0)
                 IconButton(
-                  icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
-                  onPressed: () {
-                    setState(() {
-                      _ingredientControllers.removeAt(index);
-                      controller.dispose();
-                    });
-                  },
-                ),
+                    icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
+                    onPressed: () {
+                      setState(() {
+                        _ingredientControllers.removeAt(index);
+                        controller.dispose();
+                      });
+                    }),
             ],
           );
         }).toList(),
       ],
     );
   }
-  
+
   Widget _buildStepFields() {
-     return Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        const Text('Các bước thực hiện:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const Text('Các bước thực hiện:',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ..._stepControllers.asMap().entries.map((entry) {
           int index = entry.key;
           TextEditingController controller = entry.value;
@@ -143,9 +145,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                 child: TextFormField(
                   controller: controller,
                   decoration: InputDecoration(
-                    labelText: 'Bước ${index + 1}',
-                    border: const UnderlineInputBorder(),
-                  ),
+                      labelText: 'Bước ${index + 1}', border: const UnderlineInputBorder()),
                   validator: (value) {
                     if (index == 0 && (value == null || value.isEmpty)) {
                       return 'Cần ít nhất một bước làm.';
@@ -156,17 +156,35 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
               ),
               if (index == _stepControllers.length - 1)
                 IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.green),
-                  onPressed: () {
-                    setState(() {
-                      _stepControllers.add(TextEditingController());
-                    });
-                  },
-                ),
+                    icon: const Icon(Icons.add_circle, color: Colors.green),
+                    onPressed: () {
+                      setState(() {
+                        _stepControllers.add(TextEditingController());
+                      });
+                    }),
             ],
           );
         }).toList(),
       ],
+    );
+  }
+
+  Widget _buildTypeDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedType,
+      decoration: const InputDecoration(
+        labelText: 'Loại công thức',
+        border: UnderlineInputBorder(),
+      ),
+      items: _recipeTypes
+          .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+          .toList(),
+      onChanged: (val) {
+        setState(() {
+          _selectedType = val;
+        });
+      },
+      validator: (value) => value == null ? 'Vui lòng chọn loại công thức.' : null,
     );
   }
 
@@ -177,10 +195,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         title: const Text('Thêm Công thức Mới'),
         backgroundColor: Theme.of(context).primaryColor,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveRecipe,
-          ),
+          IconButton(icon: const Icon(Icons.save), onPressed: _saveRecipe),
         ],
       ),
       body: SingleChildScrollView(
@@ -189,38 +204,47 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
+            children: [
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Tên Công thức'),
-                validator: (value) => value!.isEmpty ? 'Vui lòng nhập tên công thức.' : null,
+                validator: (value) =>
+                    value!.isEmpty ? 'Vui lòng nhập tên công thức.' : null,
               ),
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(labelText: 'Mô tả ngắn'),
-                validator: (value) => value!.isEmpty ? 'Vui lòng nhập mô tả.' : null,
+                validator: (value) =>
+                    value!.isEmpty ? 'Vui lòng nhập mô tả.' : null,
               ),
               TextFormField(
                 controller: _durationController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Thời gian chuẩn bị (phút)'),
-                validator: (value) => int.tryParse(value!) == null ? 'Vui lòng nhập số hợp lệ.' : null,
+                decoration:
+                    const InputDecoration(labelText: 'Thời gian chuẩn bị (phút)'),
+                validator: (value) =>
+                    int.tryParse(value!) == null ? 'Vui lòng nhập số hợp lệ.' : null,
               ),
               TextFormField(
                 controller: _imageUrlController,
-                decoration: const InputDecoration(labelText: 'Đường dẫn ảnh (Url hoặc assets)'),
+                decoration:
+                    const InputDecoration(labelText: 'Đường dẫn ảnh (Url hoặc assets)'),
               ),
-              
               const SizedBox(height: 20),
-              
-              // Fields cho Nguyên liệu
+
+              // Loại công thức
+              _buildTypeDropdown(),
+
+              const SizedBox(height: 20),
+
+              // Nguyên liệu
               _buildIngredientFields(),
-              
-              // Fields cho Các bước làm
+
+              // Các bước
               _buildStepFields(),
-              
+
               const SizedBox(height: 30),
-              
+
               ElevatedButton.icon(
                 onPressed: _saveRecipe,
                 icon: const Icon(Icons.add, color: Colors.white),
