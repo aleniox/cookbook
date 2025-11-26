@@ -3,13 +3,18 @@ import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 import 'add_recipe_screen.dart';
-import '../helper/database_helper.dart';
+import '../helpers/database_helper.dart';
 import 'recipe_detail_screen.dart';
+import '../models/ingredient_item.dart';
+
+import 'dart:io';
+import 'package:flutter/material.dart';
+import '../models/recipe.dart';
+import '../services/recipe_service.dart';
+import 'add_recipe_screen.dart';
 
 class RecipeListScreen extends StatefulWidget {
   final Function(Recipe) onPlanAdded;
-
-  // Thêm tham số optional để nhận danh sách công thức từ ngoài
   final List<Recipe>? initialRecipes;
 
   const RecipeListScreen({
@@ -23,27 +28,33 @@ class RecipeListScreen extends StatefulWidget {
 }
 
 class _RecipeListScreenState extends State<RecipeListScreen> {
-  late List<Recipe> _recipes; // danh sách gốc
-  late List<Recipe> _filteredRecipes; // danh sách hiển thị sau search/ lọc
+  List<Recipe> _recipes = [];
+  List<Recipe> _filteredRecipes = [];
   String _searchQuery = '';
   String? _selectedType;
 
   @override
   void initState() {
     super.initState();
-    _recipes = widget.initialRecipes ?? RecipeService.getAllRecipes();
-    _filteredRecipes = List.from(_recipes);
+    _loadRecipes();
   }
 
-  // Hàm thêm công thức từ PresetRecipeScreen
-  void addRecipeFromPreset(Recipe recipe) {
-    if (!_recipes.contains(recipe)) {
-      setState(() {
-        _recipes.add(recipe);
-        _filterRecipes();
-      });
-    }
+  Future<void> _loadRecipes() async {
+    _recipes = widget.initialRecipes ?? await RecipeService.getAllRecipes();
+    _filteredRecipes = List.from(_recipes);
+    setState(() {});
   }
+
+void addRecipeFromPreset(Recipe recipe) async {
+  // Nếu recipe đã tồn tại (id trùng) thì không thêm
+  if (recipe.id != null && _recipes.any((r) => r.id == recipe.id)) return;
+
+  // Đã lưu vào DB, recipe đã có id
+  setState(() {
+    _recipes.add(recipe);
+    _filterRecipes();
+  });
+}
 
   void _openAddRecipeScreen() async {
     final added = await Navigator.push(
@@ -52,37 +63,35 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     );
 
     if (added == true) {
-      setState(() {
-        _recipes = RecipeService.getAllRecipes();
-        _filterRecipes();
-      });
-    }
-  }
-
-  void _deleteRecipe(Recipe recipe) async {
-    // Xóa ảnh local nếu có
-    if (recipe.imageUrl.isNotEmpty && File(recipe.imageUrl).existsSync()) {
-      File(recipe.imageUrl).deleteSync();
-    }
-    await recipe.delete();
-    setState(() {
-      _recipes.remove(recipe);
+      await _loadRecipes();
       _filterRecipes();
-    });
+    }
   }
 
-  // Hàm lọc/search danh sách
+void _deleteRecipe(Recipe recipe) async {
+  if (recipe.id == null) return; // Chỉ xóa recipe có id
+  // Xóa ảnh local nếu có
+  if (recipe.imageUrl.isNotEmpty && File(recipe.imageUrl).existsSync()) {
+    File(recipe.imageUrl).deleteSync();
+  }
+
+  await DatabaseHelper.instance.deleteRecipe(recipe.id!);
+
+  setState(() {
+    _recipes.removeWhere((r) => r.id == recipe.id);
+    _filterRecipes();
+  });
+}
+
   void _filterRecipes() {
-    setState(() {
-      _filteredRecipes = _recipes.where((recipe) {
-        final matchesSearch = recipe.title.toLowerCase().contains(
-          _searchQuery.toLowerCase(),
-        );
-        final matchesType =
-            _selectedType == null || recipe.type == _selectedType;
-        return matchesSearch && matchesType;
-      }).toList();
-    });
+    _filteredRecipes = _recipes.where((recipe) {
+      final matchesSearch = recipe.title.toLowerCase().contains(
+        _searchQuery.toLowerCase(),
+      );
+      final matchesType = _selectedType == null || recipe.type == _selectedType;
+      return matchesSearch && matchesType;
+    }).toList();
+    setState(() {});
   }
 
   @override
@@ -126,7 +135,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                                 hintText: "Tìm kiếm công thức...",
                                 hintStyle: TextStyle(color: Colors.grey),
                                 border: InputBorder.none,
-                                isCollapsed: true, // giảm chiều cao input
+                                isCollapsed: true,
                               ),
                               onChanged: (value) {
                                 _searchQuery = value;
@@ -137,7 +146,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                           if (_searchQuery.isNotEmpty)
                             GestureDetector(
                               onTap: () {
-                                _searchQuery = "";
+                                _searchQuery = '';
                                 _filterRecipes();
                               },
                               child: const Icon(
@@ -150,10 +159,8 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
-                  // FILTER BUTTON NÂNG CẤP
+                  // FILTER BUTTON
                   Container(
                     height: 44,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -170,23 +177,15 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                     ),
                     child: PopupMenuButton<String>(
                       onSelected: (value) {
-                        setState(() {
-                          _selectedType = value;
-                          _filterRecipes();
-                        });
+                        _selectedType = value;
+                        _filterRecipes();
                       },
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'Đồ uống',
-                          child: Text('Đồ uống'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'Thức ăn',
-                          child: Text('Thức ăn'),
-                        ),
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: 'Đồ uống', child: Text('Đồ uống')),
+                        PopupMenuItem(value: 'Thức ăn', child: Text('Thức ăn')),
                       ],
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -195,7 +194,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                             _selectedType ?? 'Lọc',
                             style: const TextStyle(fontSize: 14),
                           ),
-                          const SizedBox(width: 50),
+                          const SizedBox(width: 4),
                           const Icon(Icons.arrow_drop_down),
                         ],
                       ),
@@ -224,8 +223,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
             ),
           ],
         ),
-
-        // Nút FAB nổi
+        // FAB
         Positioned(
           bottom: 16,
           right: 16,

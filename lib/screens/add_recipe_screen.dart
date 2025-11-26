@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+
 import '../models/recipe.dart';
+import '../models/ingredient_item.dart';
 import '../services/recipe_service.dart';
 
 class AddRecipeScreen extends StatefulWidget {
@@ -26,35 +28,32 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
-  String? _selectedType; // Loại công thức: Đồ uống, Thức ăn, ...
+  String? _selectedType;
 
-  // Chọn ảnh từ gallery
+  /// PICK IMAGE
   Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
-    );
+    final XFile? pickedFile =
+        await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
+      setState(() => _imageFile = File(pickedFile.path));
     }
   }
 
-  // Lưu ảnh vào thư mục app
+  /// SAVE IMAGE INTO APP DIRECTORY
   Future<String?> _saveImage(File image) async {
     final appDir = await getApplicationDocumentsDirectory();
     final fileName = path.basename(image.path);
-    final savedImage = await image.copy('${appDir.path}/$fileName');
-    return savedImage.path;
+    final savedFile = await image.copy('${appDir.path}/$fileName');
+    return savedFile.path;
   }
 
-  // Tạo Recipe và lưu vào Hive
-  void _createRecipe() async {
-    if (_titleController.text.isEmpty || _selectedType == null) return;
-
-    final ingredientItems = _ingredients
-        .map((i) => IngredientItem(name: i))
-        .toList();
+  /// CREATE RECIPE USING SQLITE
+  Future<void> _createRecipe() async {
+    if (_titleController.text.isEmpty || _selectedType == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Vui lòng nhập đủ thông tin")));
+      return;
+    }
 
     String imagePath = "";
     if (_imageFile != null) {
@@ -62,18 +61,45 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
     }
 
     final recipe = Recipe(
-      title: _titleController.text,
-      description: _descController.text,
-      ingredients: ingredientItems,
-      steps: _steps,
+      id: null,
+      title: _titleController.text.trim(),
+      description: _descController.text.trim(),
       durationInMinutes: int.tryParse(_durationController.text) ?? 0,
+      type: _selectedType!,
       imageUrl: imagePath,
-      type: _selectedType!, // thêm trường type
     );
 
-    await RecipeService.addRecipe(recipe);
+    final recipeId = await RecipeService.insertRecipe(recipe);
 
-    if (mounted) Navigator.pop(context, true);
+    // Lưu ingredients
+    for (var name in _ingredients) {
+      await RecipeService.insertIngredient(
+        IngredientItem(
+          id: null,
+          name: name,
+          isChecked: false,
+          recipeId: recipeId,
+        ),
+      );
+    }
+
+    // Lưu steps
+    for (var step in _steps) {
+      await RecipeService.insertStep(recipeId, step);
+    }
+
+    if (!mounted) return;
+    Navigator.pop(context, true);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    _ingredientController.dispose();
+    _stepController.dispose();
+    _durationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -85,7 +111,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Chọn ảnh
+            // IMAGE PICKER
             GestureDetector(
               onTap: _pickImage,
               child: _imageFile == null
@@ -107,35 +133,28 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
             TextField(
               controller: _descController,
               decoration: const InputDecoration(labelText: "Mô tả"),
+              maxLines: 3,
             ),
             const SizedBox(height: 10),
 
             TextField(
               controller: _durationController,
-              decoration: const InputDecoration(labelText: "Thời gian (phút)"),
               keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "Thời gian (phút)"),
             ),
             const SizedBox(height: 10),
 
-            // Loại công thức
             DropdownButtonFormField<String>(
               value: _selectedType,
               decoration: const InputDecoration(labelText: "Loại công thức"),
-              items: <String>['Đồ uống', 'Thức ăn']
-                  .map((type) => DropdownMenuItem(
-                        value: type,
-                        child: Text(type),
-                      ))
+              items: ['Đồ uống', 'Thức ăn']
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                   .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedType = value;
-                });
-              },
+              onChanged: (v) => setState(() => _selectedType = v),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
 
-            // Nguyên liệu
+            // INGREDIENT INPUT
             Row(
               children: [
                 Expanded(
@@ -147,9 +166,10 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                 IconButton(
                   icon: const Icon(Icons.add),
                   onPressed: () {
-                    if (_ingredientController.text.isEmpty) return;
+                    final text = _ingredientController.text.trim();
+                    if (text.isEmpty) return;
                     setState(() {
-                      _ingredients.add(_ingredientController.text);
+                      _ingredients.add(text);
                       _ingredientController.clear();
                     });
                   },
@@ -158,41 +178,34 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
             ),
             Wrap(
               spacing: 8,
+              runSpacing: 4,
               children: _ingredients
-                  .map(
-                    (i) => Chip(
-                      label: Text(i),
-                      onDeleted: () {
-                        setState(() {
-                          _ingredients.remove(i);
-                        });
-                      },
-                    ),
-                  )
+                  .map((i) => Chip(
+                        label: Text(i),
+                        onDeleted: () => setState(() => _ingredients.remove(i)),
+                      ))
                   .toList(),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
 
-            // Steps
+            // STEP INPUT
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _stepController,
-                    decoration: const InputDecoration(
-                      labelText: "Bước nấu ăn",
-                    ),
                     minLines: 1,
-                    maxLines: 5,
-                    keyboardType: TextInputType.multiline,
+                    maxLines: 3,
+                    decoration: const InputDecoration(labelText: "Bước nấu ăn"),
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.add),
                   onPressed: () {
-                    if (_stepController.text.isEmpty) return;
+                    final text = _stepController.text.trim();
+                    if (text.isEmpty) return;
                     setState(() {
-                      _steps.add(_stepController.text);
+                      _steps.add(text);
                       _stepController.clear();
                     });
                   },
@@ -202,19 +215,13 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: _steps
-                  .map(
-                    (s) => Chip(
-                      label: Text(s),
-                      onDeleted: () {
-                        setState(() {
-                          _steps.remove(s);
-                        });
-                      },
-                    ),
-                  )
+                  .map((s) => Chip(
+                        label: Text(s),
+                        onDeleted: () => setState(() => _steps.remove(s)),
+                      ))
                   .toList(),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             ElevatedButton(
               onPressed: _createRecipe,
