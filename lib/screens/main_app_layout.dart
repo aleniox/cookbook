@@ -1,8 +1,10 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 
 import 'recipe_list_screen.dart';
 import 'shopping_list_screen.dart';
 import 'preset_recipe_screen.dart';
+import 'login_screen.dart';
 import '../models/recipe.dart';
 
 class MainAppLayout extends StatefulWidget {
@@ -30,9 +32,7 @@ class _MainAppLayoutState extends State<MainAppLayout> {
         onPlanAdded: _addRecipeToPlan,
       ),
       ShoppingListScreen(recipes: _plannedRecipes),
-      PresetRecipeScreen(
-        onAddToRecipeList: _addRecipeFromPreset,
-      ),
+      PresetRecipeScreen(onAddToRecipeList: _addRecipeFromPreset),
     ];
   }
 
@@ -59,6 +59,17 @@ class _MainAppLayoutState extends State<MainAppLayout> {
     Navigator.of(context).maybePop(); // đóng drawer nếu đang mở
   }
 
+  void _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove("email");
+    await prefs.remove("password");
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.primary;
@@ -69,10 +80,19 @@ class _MainAppLayoutState extends State<MainAppLayout> {
           _selectedIndex == 0
               ? 'Danh sách Công thức'
               : _selectedIndex == 1
-                  ? 'Kế hoạch Mua sắm'
-                  : 'Thư viện Công thức',
+              ? 'Kế hoạch Mua sắm'
+              : 'Thư viện Công thức',
         ),
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.logout),
+        //     onPressed: _logout,
+        //     tooltip: 'Đăng xuất',
+        //   ),
+        // ],
+        // backgroundColor: Colors.deepPurple,
       ),
+
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -105,6 +125,15 @@ class _MainAppLayoutState extends State<MainAppLayout> {
               title: const Text('Thư viện Công thức'),
               selected: _selectedIndex == 2,
               onTap: () => _onItemTapped(2),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                'Đăng xuất',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: _logout,
             ),
           ],
         ),
