@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_app_layout.dart';
 import 'models/recipe.dart';
@@ -12,13 +12,15 @@ Future<void> main() async {
 
   // Khởi tạo Hive
   await Hive.initFlutter();
-
-  // Đăng ký adapter
   Hive.registerAdapter(IngredientItemAdapter());
   Hive.registerAdapter(RecipeAdapter());
-
-  // Mở box lưu trữ công thức
   await Hive.openBox<Recipe>('recipes');
+
+  // Khởi tạo sqflite cho desktop (nếu dùng database SQLite)
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+
+  // Không cần làm gì cho SharedPreferences trên desktop, plugin mới tự setup
 
   runApp(const RecipeApp());
 }
