@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../helper/login_helper.dart';
+import '../helpers/login_helper.dart';
 import 'main_app_layout.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,15 +24,13 @@ class _LoginScreenState extends State<LoginScreen> {
     _autoLogin();
   }
 
-  // ---------------- Auto Login ----------------
-  // ---------------- Auto Login ----------------
+  // ---------------- AUTO LOGIN ----------------
   Future<void> _autoLogin() async {
-    if (_emailController.text.isEmpty) return;
-    final user = await DBHelper.getUser(_emailController.text.trim());
-    if (user != null) {
-    if (_emailController.text.isEmpty) return;
-    final user = await DBHelper.getUser(_emailController.text.trim());
-    if (user != null) {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString("email");
+
+    if (savedEmail != null && savedEmail.isNotEmpty) {
+      // Đã login trước → vào thẳng app
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainAppLayout()),
@@ -39,8 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ---------------- Submit ----------------
-  // ---------------- Submit ----------------
+  // ---------------- SUBMIT ----------------
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -48,96 +46,79 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (_isLogin) {
+      // ---- LOGIN ----
       final user = await DBHelper.getUser(email);
+
       if (user != null && user['password'] == password) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Đăng nhập thành công")));
-      final user = await DBHelper.getUser(email);
-      if (user != null && user['password'] == password) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Đăng nhập thành công")));
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString("email", email);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Đăng nhập thành công")),
+        );
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const MainAppLayout()),
         );
       } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Sai email hoặc mật khẩu")));
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Sai email hoặc mật khẩu")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Sai email hoặc mật khẩu")),
+        );
       }
     } else {
+      // ---- REGISTER ----
       final user = await DBHelper.getUser(email);
+
       if (user != null) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Email đã tồn tại")));
-      final user = await DBHelper.getUser(email);
-      if (user != null) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Email đã tồn tại")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Email đã tồn tại")),
+        );
       } else {
         await DBHelper.insertUser(email, password);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Đăng ký thành công")));
-        await DBHelper.insertUser(email, password);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Đăng ký thành công")));
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Đăng ký thành công")),
+        );
+
         _toggleForm();
       }
     }
   }
 
-  // ---------------- Toggle Form ----------------
-  void _toggleForm() {
-    setState(() {
-      _isLogin = !_isLogin;
-      _formKey.currentState?.reset();
-      _emailController.clear();
-      _passwordController.clear();
-    });
-  }
-
-  // ---------------- Forgot Password ----------------
-  void _forgotPassword() async {
-  // ---------------- Toggle Form ----------------
-  void _toggleForm() {
-    setState(() {
-      _isLogin = !_isLogin;
-      _formKey.currentState?.reset();
-      _emailController.clear();
-      _passwordController.clear();
-    });
-  }
-
-  // ---------------- Forgot Password ----------------
+  // ---------------- FORGOT PASSWORD ----------------
   void _forgotPassword() async {
     final email = _emailController.text.trim();
     final user = await DBHelper.getUser(email);
+
     if (user != null) {
       await DBHelper.updatePassword(email, "123456");
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Mật khẩu tạm thời: 123456")));
-    final user = await DBHelper.getUser(email);
-    if (user != null) {
-      await DBHelper.updatePassword(email, "123456");
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Mật khẩu tạm thời: 123456")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Mật khẩu tạm thời: 123456")),
+      );
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Email chưa đăng ký")));
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Email chưa đăng ký")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email chưa đăng ký")),
+      );
     }
   }
 
-  // ---------------- UI ----------------
+  // ---------------- TOGGLE FORM ----------------
+  void _toggleForm() {
+    setState(() {
+      _isLogin = !_isLogin;
+      _emailController.clear();
+      _passwordController.clear();
+    });
+  }
+
   // ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff3f4f6),
       body: Center(
-        child: Container(
+        child: SizedBox(
           width: 380,
           height: 480,
           child: Card(
@@ -175,10 +156,6 @@ class _LoginScreenState extends State<LoginScreen> {
           // Email
           TextFormField(
             controller: _emailController,
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             decoration: _inputStyle("Email"),
             validator: (v) =>
                 v == null || !v.contains("@") ? "Email không hợp lệ" : null,
@@ -186,14 +163,9 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 16),
 
           // Password
-          // Password
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _submit(),
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _submit(),
             decoration: _inputStyle("Mật khẩu").copyWith(
               suffixIcon: IconButton(
                 icon: Icon(
@@ -211,44 +183,45 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 28),
 
           // Button
-          // Button
           SizedBox(
             width: double.infinity,
             height: 48,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.deepPurple.shade400, Colors.deepPurple.shade700],
-                  colors: [Colors.deepPurple.shade400, Colors.deepPurple.shade700],
+                  colors: [
+                    Colors.deepPurple.shade400,
+                    Colors.deepPurple.shade700
+                  ],
                 ),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: ElevatedButton(
                 onPressed: _submit,
                 style: ElevatedButton.styleFrom(
-                  shadowColor: Colors.transparent,
                   backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: Text(_isLogin ? "Đăng nhập" : "Đăng ký",
-                    style: const TextStyle(fontSize: 16)),
-                child: Text(_isLogin ? "Đăng nhập" : "Đăng ký",
-                    style: const TextStyle(fontSize: 16)),
+                child: Text(
+                  _isLogin ? "Đăng nhập" : "Đăng ký",
+                  style: const TextStyle(fontSize: 16),
+                ),
               ),
             ),
           ),
+
           const SizedBox(height: 10),
 
           TextButton(
             onPressed: _toggleForm,
-            child: Text(_isLogin
-                ? "Chưa có tài khoản? Đăng ký"
-                : "Đã có tài khoản? Đăng nhập"),
-            child: Text(_isLogin
-                ? "Chưa có tài khoản? Đăng ký"
-                : "Đã có tài khoản? Đăng nhập"),
+            child: Text(
+              _isLogin
+                  ? "Chưa có tài khoản? Đăng ký"
+                  : "Đã có tài khoản? Đăng nhập",
+            ),
           ),
 
           if (_isLogin)
