@@ -18,10 +18,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  // ⭐ Thêm focus nodes
+  final FocusNode _emailFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
+
   @override
   void initState() {
     super.initState();
     _autoLogin();
+  }
+
+  @override
+  void dispose() {
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    super.dispose();
   }
 
   // ---------------- AUTO LOGIN ----------------
@@ -30,7 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final savedEmail = prefs.getString("email");
 
     if (savedEmail != null && savedEmail.isNotEmpty) {
-      // Đã login trước → vào thẳng app
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainAppLayout()),
@@ -46,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (_isLogin) {
-      // ---- LOGIN ----
       final user = await DBHelper.getUser(email);
 
       if (user != null && user['password'] == password) {
@@ -67,7 +76,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } else {
-      // ---- REGISTER ----
       final user = await DBHelper.getUser(email);
 
       if (user != null) {
@@ -76,11 +84,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } else {
         await DBHelper.insertUser(email, password);
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Đăng ký thành công")),
         );
-
         _toggleForm();
       }
     }
@@ -153,19 +159,27 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 26),
 
-          // Email
+          // -------- EMAIL --------
           TextFormField(
             controller: _emailController,
+            focusNode: _emailFocus,
+            textInputAction: TextInputAction.next,           // Enter -> sang ô sau
+            onFieldSubmitted: (_) {
+              FocusScope.of(context).requestFocus(_passwordFocus);
+            },
             decoration: _inputStyle("Email"),
             validator: (v) =>
                 v == null || !v.contains("@") ? "Email không hợp lệ" : null,
           ),
           const SizedBox(height: 16),
 
-          // Password
+          // -------- PASSWORD --------
           TextFormField(
             controller: _passwordController,
+            focusNode: _passwordFocus,
             obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,           // Enter -> submit
+            onFieldSubmitted: (_) => _submit(),
             decoration: _inputStyle("Mật khẩu").copyWith(
               suffixIcon: IconButton(
                 icon: Icon(
@@ -180,9 +194,10 @@ class _LoginScreenState extends State<LoginScreen> {
             validator: (v) =>
                 v == null || v.length < 6 ? "Mật khẩu tối thiểu 6 ký tự" : null,
           ),
+
           const SizedBox(height: 28),
 
-          // Button
+          // -------- BUTTON SUBMIT --------
           SizedBox(
             width: double.infinity,
             height: 48,
