@@ -1,0 +1,28 @@
+[
+  {
+    "title": "Spaghetti Bolognese",
+    "imageUrl": "https://i.imgur.com/1R0V1Oi.jpg",
+    "description": "Món mì Ý với sốt thịt bò và cà chua thơm ngon.",
+    "ingredients": [
+      { "name": "400g mì spaghetti" },
+      { "name": "200g thịt bò băm" },
+      { "name": "100g sốt cà chua" }
+    ],
+    "steps": ["Luộc mì", "Xào thịt bò", "Trộn sốt với mì"],
+    "durationInMinutes": 30,
+    "type": "Thức ăn"
+  },
+  {
+    "title": "Salad Trái Cây",
+    "imageUrl": "https://i.imgur.com/2Yb9pZb.jpg",
+    "description": "Salad tươi mát từ táo, chuối và nho.",
+    "ingredients": [
+      { "name": "1 quả táo" },
+      { "name": "1 quả chuối" },
+      { "name": "100g nho" }
+    ],
+    "steps": ["Cắt trái cây", "Trộn đều", "Thêm nước sốt"],
+    "durationInMinutes": 10,
+    "type": "Thức ăn"
+  }
+]
