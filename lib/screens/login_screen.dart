@@ -24,7 +24,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ---------------- Auto Login ----------------
+  // ---------------- Auto Login ----------------
   Future<void> _autoLogin() async {
+    if (_emailController.text.isEmpty) return;
+    final user = await DBHelper.getUser(_emailController.text.trim());
+    if (user != null) {
     if (_emailController.text.isEmpty) return;
     final user = await DBHelper.getUser(_emailController.text.trim());
     if (user != null) {
@@ -35,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // ---------------- Submit ----------------
   // ---------------- Submit ----------------
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -47,11 +52,17 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user != null && user['password'] == password) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text("Đăng nhập thành công")));
+      final user = await DBHelper.getUser(email);
+      if (user != null && user['password'] == password) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Đăng nhập thành công")));
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const MainAppLayout()),
         );
       } else {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Sai email hoặc mật khẩu")));
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text("Sai email hoặc mật khẩu")));
       }
@@ -60,7 +71,14 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user != null) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text("Email đã tồn tại")));
+      final user = await DBHelper.getUser(email);
+      if (user != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Email đã tồn tại")));
       } else {
+        await DBHelper.insertUser(email, password);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Đăng ký thành công")));
         await DBHelper.insertUser(email, password);
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text("Đăng ký thành công")));
@@ -81,7 +99,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ---------------- Forgot Password ----------------
   void _forgotPassword() async {
+  // ---------------- Toggle Form ----------------
+  void _toggleForm() {
+    setState(() {
+      _isLogin = !_isLogin;
+      _formKey.currentState?.reset();
+      _emailController.clear();
+      _passwordController.clear();
+    });
+  }
+
+  // ---------------- Forgot Password ----------------
+  void _forgotPassword() async {
     final email = _emailController.text.trim();
+    final user = await DBHelper.getUser(email);
+    if (user != null) {
+      await DBHelper.updatePassword(email, "123456");
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Mật khẩu tạm thời: 123456")));
     final user = await DBHelper.getUser(email);
     if (user != null) {
       await DBHelper.updatePassword(email, "123456");
@@ -90,9 +125,12 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Email chưa đăng ký")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Email chưa đăng ký")));
     }
   }
 
+  // ---------------- UI ----------------
   // ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
@@ -139,6 +177,8 @@ class _LoginScreenState extends State<LoginScreen> {
             controller: _emailController,
             textInputAction: TextInputAction.next,
             onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             decoration: _inputStyle("Email"),
             validator: (v) =>
                 v == null || !v.contains("@") ? "Email không hợp lệ" : null,
@@ -146,9 +186,12 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 16),
 
           // Password
+          // Password
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _submit(),
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _submit(),
             decoration: _inputStyle("Mật khẩu").copyWith(
@@ -168,12 +211,14 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 28),
 
           // Button
+          // Button
           SizedBox(
             width: double.infinity,
             height: 48,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
+                  colors: [Colors.deepPurple.shade400, Colors.deepPurple.shade700],
                   colors: [Colors.deepPurple.shade400, Colors.deepPurple.shade700],
                 ),
                 borderRadius: BorderRadius.circular(14),
@@ -189,6 +234,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: Text(_isLogin ? "Đăng nhập" : "Đăng ký",
                     style: const TextStyle(fontSize: 16)),
+                child: Text(_isLogin ? "Đăng nhập" : "Đăng ký",
+                    style: const TextStyle(fontSize: 16)),
               ),
             ),
           ),
@@ -196,6 +243,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
           TextButton(
             onPressed: _toggleForm,
+            child: Text(_isLogin
+                ? "Chưa có tài khoản? Đăng ký"
+                : "Đã có tài khoản? Đăng nhập"),
             child: Text(_isLogin
                 ? "Chưa có tài khoản? Đăng ký"
                 : "Đã có tài khoản? Đăng nhập"),

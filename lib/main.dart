@@ -1,26 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'screens/login_screen.dart';
-import 'screens/main_app_layout.dart';
-import 'models/recipe.dart';
-// import 'models/ingredient_item.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Khởi tạo Hive
-  await Hive.initFlutter();
-  Hive.registerAdapter(IngredientItemAdapter());
-  Hive.registerAdapter(RecipeAdapter());
-  await Hive.openBox<Recipe>('recipes');
-
-  // Khởi tạo sqflite cho desktop (nếu dùng database SQLite)
+  // Khởi tạo sqflite cho desktop
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  // Không cần làm gì cho SharedPreferences trên desktop, plugin mới tự setup
+  // TODO: nếu cần, bạn có thể tạo bảng SQLite ban đầu ở đây
+  // await RecipeService.initDatabase();
 
   runApp(const RecipeApp());
 }
@@ -34,8 +25,7 @@ class RecipeApp extends StatelessWidget {
       title: 'Sách Nấu Ăn Flutter',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      // Mở màn login trước, sau khi login sẽ push MainAppLayout
-      home: const LoginScreen(),
+      home: const LoginScreen(), // Mở login trước
     );
   }
 }
