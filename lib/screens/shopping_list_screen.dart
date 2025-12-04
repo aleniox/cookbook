@@ -174,8 +174,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           right: 20,
           child: FloatingActionButton(
             onPressed: _captureIngredientImage,
-            child: const Icon(Icons.camera_alt),
             backgroundColor: Colors.teal,
+            child: const Icon(Icons.camera_alt),
           ),
         ),
       ],

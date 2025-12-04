@@ -120,7 +120,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     // xóa DB + file ảnh
     try {
       if (backup.id != null) {
-        if (backup.imageUrl != null && backup.imageUrl.isNotEmpty) {
+        if (backup.imageUrl.isNotEmpty) {
           final f = File(backup.imageUrl);
           if (f.existsSync()) f.deleteSync();
         }

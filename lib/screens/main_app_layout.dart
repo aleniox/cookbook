@@ -136,7 +136,7 @@ class _MainAppLayoutState extends State<MainAppLayout> {
 
     // Xóa file ảnh nếu có, xóa DB (nếu có id)
     try {
-      if (backup.imageUrl != null && backup.imageUrl.isNotEmpty) {
+      if (backup.imageUrl.isNotEmpty) {
         final f = File(backup.imageUrl);
         if (f.existsSync()) f.deleteSync();
       }

@@ -36,8 +36,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     _descriptionController.dispose();
     _durationController.dispose();
     _imageUrlController.dispose();
-    for (var c in _ingredientControllers) c.dispose();
-    for (var c in _stepControllers) c.dispose();
+    for (var c in _ingredientControllers) {
+      c.dispose();
+    }
+    for (var c in _stepControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -172,7 +176,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
 
   Widget _buildTypeDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedType,
+      initialValue: _selectedType,
       decoration: const InputDecoration(
         labelText: 'Loại công thức',
         border: UnderlineInputBorder(),

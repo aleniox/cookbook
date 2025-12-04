@@ -206,7 +206,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedType,
+                        initialValue: _selectedType,
                         decoration: _inputDecoration("Loại công thức"),
                         items: ['Đồ uống', 'Thức ăn']
                             .map(
@@ -349,13 +349,13 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Huỷ'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  child: const Text('Huỷ'),
                 ),
               ],
             ),
