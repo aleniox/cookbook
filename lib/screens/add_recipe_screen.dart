@@ -16,6 +16,7 @@ class AddRecipeScreen extends StatefulWidget {
 }
 
 class _AddRecipeScreenState extends State<AddRecipeScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _ingredientController = TextEditingController();
@@ -32,8 +33,10 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
 
   /// PICK IMAGE
   Future<void> _pickImage() async {
-    final XFile? pickedFile =
-        await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
     if (pickedFile != null) {
       setState(() => _imageFile = File(pickedFile.path));
     }
@@ -49,11 +52,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
 
   /// CREATE RECIPE USING SQLITE
   Future<void> _createRecipe() async {
-    if (_titleController.text.isEmpty || _selectedType == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Vui lòng nhập đủ thông tin")));
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     String imagePath = "";
     if (_imageFile != null) {
@@ -102,132 +101,265 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
     super.dispose();
   }
 
+  Widget _buildImagePicker(BuildContext context) {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              height: 160,
+              width: double.infinity,
+              color: Colors.grey[200],
+              child: _imageFile == null
+                  ? const Center(
+                      child: Icon(
+                        Icons.image_outlined,
+                        size: 48,
+                        color: Colors.grey,
+                      ),
+                    )
+                  : Image.file(
+                      _imageFile!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+            ),
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Text('Chọn ảnh', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label) => InputDecoration(
+    labelText: label,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Thêm Công Thức")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // IMAGE PICKER
-            GestureDetector(
-              onTap: _pickImage,
-              child: _imageFile == null
-                  ? Container(
-                      height: 150,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.add_a_photo, size: 50),
-                    )
-                  : Image.file(_imageFile!, height: 150, fit: BoxFit.cover),
-            ),
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: "Tên món"),
-            ),
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: _descController,
-              decoration: const InputDecoration(labelText: "Mô tả"),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: _durationController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Thời gian (phút)"),
-            ),
-            const SizedBox(height: 10),
-
-            DropdownButtonFormField<String>(
-              value: _selectedType,
-              decoration: const InputDecoration(labelText: "Loại công thức"),
-              items: ['Đồ uống', 'Thức ăn']
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) => setState(() => _selectedType = v),
-            ),
-            const SizedBox(height: 16),
-
-            // INGREDIENT INPUT
-            Row(
+      appBar: AppBar(title: const Text("Thêm Công Thức"), elevation: 1),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _ingredientController,
-                    decoration: const InputDecoration(labelText: "Nguyên liệu"),
+                _buildImagePicker(context),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: _titleController,
+                  decoration: _inputDecoration("Tên món"),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Vui lòng nhập tên món'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+
+                TextFormField(
+                  controller: _descController,
+                  decoration: _inputDecoration("Mô tả ngắn"),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _durationController,
+                        keyboardType: TextInputType.number,
+                        decoration: _inputDecoration("Thời gian (phút)"),
+                        validator: (v) =>
+                            (v == null || v.isEmpty || int.tryParse(v) == null)
+                            ? 'Nhập số phút hợp lệ'
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedType,
+                        decoration: _inputDecoration("Loại công thức"),
+                        items: ['Đồ uống', 'Thức ăn']
+                            .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                            )
+                            .toList(),
+                        onChanged: (v) => setState(() => _selectedType = v),
+                        validator: (v) =>
+                            v == null ? 'Chọn loại công thức' : null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // INGREDIENT INPUT (chip list)
+                Text(
+                  'Nguyên liệu',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _ingredientController,
+                        decoration: InputDecoration(
+                          hintText: "Ví dụ: 500g ức gà",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        final text = _ingredientController.text.trim();
+                        if (text.isEmpty) return;
+                        setState(() {
+                          _ingredients.add(text);
+                          _ingredientController.clear();
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                      ),
+                      child: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: _ingredients.map((i) {
+                    return Chip(
+                      label: Text(i),
+                      onDeleted: () => setState(() => _ingredients.remove(i)),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+
+                // STEP INPUT
+                Text(
+                  'Các bước thực hiện',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _stepController,
+                        decoration: InputDecoration(
+                          hintText: "Mô tả bước",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        minLines: 1,
+                        maxLines: 4,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        final text = _stepController.text.trim();
+                        if (text.isEmpty) return;
+                        setState(() {
+                          _steps.add(text);
+                          _stepController.clear();
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                      ),
+                      child: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _steps.asMap().entries.map((e) {
+                    final idx = e.key;
+                    final s = e.value;
+                    return ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        radius: 12,
+                        child: Text(
+                          '${idx + 1}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      title: Text(s),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => setState(() => _steps.removeAt(idx)),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
+
+                ElevatedButton.icon(
+                  onPressed: _createRecipe,
+                  icon: const Icon(Icons.save),
+                  label: const Text("Lưu Công Thức"),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () {
-                    final text = _ingredientController.text.trim();
-                    if (text.isEmpty) return;
-                    setState(() {
-                      _ingredients.add(text);
-                      _ingredientController.clear();
-                    });
-                  },
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Huỷ'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ],
             ),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: _ingredients
-                  .map((i) => Chip(
-                        label: Text(i),
-                        onDeleted: () => setState(() => _ingredients.remove(i)),
-                      ))
-                  .toList(),
-            ),
-            const SizedBox(height: 16),
-
-            // STEP INPUT
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _stepController,
-                    minLines: 1,
-                    maxLines: 3,
-                    decoration: const InputDecoration(labelText: "Bước nấu ăn"),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () {
-                    final text = _stepController.text.trim();
-                    if (text.isEmpty) return;
-                    setState(() {
-                      _steps.add(text);
-                      _stepController.clear();
-                    });
-                  },
-                ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: _steps
-                  .map((s) => Chip(
-                        label: Text(s),
-                        onDeleted: () => setState(() => _steps.remove(s)),
-                      ))
-                  .toList(),
-            ),
-            const SizedBox(height: 24),
-
-            ElevatedButton(
-              onPressed: _createRecipe,
-              child: const Text("Lưu Công Thức"),
-            ),
-          ],
+          ),
         ),
       ),
     );
