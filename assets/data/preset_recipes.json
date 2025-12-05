@@ -1,7 +1,7 @@
 [
   {
     "title": "Spaghetti Bolognese",
-    "imageUrl": "https://i.imgur.com/1R0V1Oi.jpg",
+    "imageUrl": "assets/images/spaghetti-bolognese-106560-1.jpeg",
     "description": "Món mì Ý với sốt thịt bò và cà chua thơm ngon.",
     "ingredients": [
       { "name": "400g mì spaghetti" },
@@ -14,7 +14,7 @@
   },
   {
     "title": "Salad Trái Cây",
-    "imageUrl": "https://i.imgur.com/2Yb9pZb.jpg",
+    "imageUrl": "assets/images/salad-trai-cay-khong-nuoc-sot-thumbnail-3.jpg",
     "description": "Salad tươi mát từ táo, chuối và nho.",
     "ingredients": [
       { "name": "1 quả táo" },

@@ -52,12 +52,29 @@ class _PresetRecipeScreenState extends State<PresetRecipeScreen> {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(4),
                       ),
-                      child: Image.network(
-                        recipe.imageUrl,
-                        height: 150,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                      child: recipe.imageUrl.startsWith('http')
+                          ? Image.network(
+                              recipe.imageUrl,
+                              height: 150,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: 150,
+                                color: Theme.of(context).colorScheme.surfaceVariant,
+                                child: const Icon(Icons.broken_image, size: 48),
+                              ),
+                            )
+                          : Image.asset(
+                              recipe.imageUrl,
+                              height: 150,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: 150,
+                                color: Theme.of(context).colorScheme.surfaceVariant,
+                                child: const Icon(Icons.broken_image, size: 48),
+                              ),
+                            ),
                     ),
 
                   Padding(

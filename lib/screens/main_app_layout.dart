@@ -259,16 +259,19 @@ class _MainAppLayoutState extends State<MainAppLayout> {
           itemBuilder: (context, index) {
             final recipe = displayed[index];
             final added = _plannedRecipes.contains(recipe);
+
+            double aspect = _gridCrossAxisCount == 1
+                ? 1.5
+                : (_gridCrossAxisCount == 2 ? 0.95 : 0.85);
+
             return Card(
-              elevation: 3,
+              elevation: 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
               ),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
-                borderRadius: BorderRadius.circular(16),
                 onTap: () {
-                  // Mở màn hình chi tiết (không tự động thêm)
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -282,70 +285,154 @@ class _MainAppLayoutState extends State<MainAppLayout> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Theme.of(
-                                context,
-                              ).colorScheme.primary.withOpacity(0.14),
-                              Theme.of(
-                                context,
-                              ).colorScheme.surface.withOpacity(0.18),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.fastfood, size: 56),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-                      child: Row(
+                    // Image area
+                    AspectRatio(
+                      aspectRatio: aspect,
+                      child: Stack(
+                        fit: StackFit.expand,
                         children: [
-                          Expanded(
-                            child: Text(
-                              recipe.toString(),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14.5,
+                          // Image (network or asset)
+                          Builder(builder: (ctx) {
+                            final img = recipe.imageUrl;
+                            if (img.isNotEmpty && (img.startsWith('http') || img.startsWith('https'))) {
+                              return Image.network(
+                                img,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: Theme.of(context).colorScheme.surfaceVariant,
+                                  child: const Icon(Icons.fastfood, size: 48),
+                                ),
+                              );
+                            } else if (img.isNotEmpty) {
+                              return Image.asset(
+                                img,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: Theme.of(context).colorScheme.surfaceVariant,
+                                  child: const Icon(Icons.fastfood, size: 48),
+                                ),
+                              );
+                            } else {
+                              return Container(
+                                color: Theme.of(context).colorScheme.surfaceVariant,
+                                child: const Center(child: Icon(Icons.fastfood, size: 48)),
+                              );
+                            }
+                          }),
+
+                          // Gradient overlay
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withOpacity(0.45),
+                                ],
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          // Thêm vào kế hoạch (hoặc đã thêm)
+
+                          // Title and meta at bottom
+                          Positioned(
+                            left: 8,
+                            right: 8,
+                            bottom: 8,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  recipe.toString(),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.schedule, size: 12, color: Colors.white70),
+                                          const SizedBox(width: 6),
+                                          Text('${recipe.durationInMinutes}m', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.category, size: 12, color: Colors.white70),
+                                          const SizedBox(width: 6),
+                                          Text(recipe.type, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Bottom area: counts + actions
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  recipe.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${recipe.ingredients.length} nguyên liệu • ${recipe.steps.length} bước',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Actions
                           IconButton(
                             tooltip: added ? 'Đã thêm' : 'Thêm vào kế hoạch',
-                            icon: Icon(
-                              added ? Icons.check_circle : Icons.playlist_add,
-                              color: added ? Colors.green : null,
-                            ),
+                            icon: Icon(added ? Icons.check_circle : Icons.playlist_add, color: added ? Colors.green : null),
                             onPressed: added
                                 ? null
                                 : () {
                                     _addRecipeToPlan(recipe);
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Đã thêm vào kế hoạch: ${recipe.toString()}',
-                                        ),
-                                      ),
+                                      SnackBar(content: Text('Đã thêm vào kế hoạch: ${recipe.toString()}')),
                                     );
                                   },
                           ),
-                          // Nút xóa công thức (mới)
                           IconButton(
                             tooltip: 'Xóa công thức',
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              color: Colors.redAccent,
-                            ),
+                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                             onPressed: () => _confirmAndDelete(recipe),
                           ),
                         ],
