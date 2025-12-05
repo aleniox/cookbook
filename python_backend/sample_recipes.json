@@ -1,0 +1,141 @@
+[
+  {
+    "title": "Phở Bò",
+    "description": "Phở bò truyền thống Việt Nam với nước dùng thơm ngon",
+    "imageUrl": "https://via.placeholder.com/300x200?text=Pho+Bo",
+    "durationInMinutes": 120,
+    "type": "Việt Nam",
+    "ingredients": [
+      "1 kg xương bò",
+      "500g thịt bò nạm",
+      "2 cái cà rốt",
+      "2 cái khoai tây",
+      "1 cây hành tây",
+      "30g gừng",
+      "3-4 quả hồi",
+      "2 cái quế",
+      "10g muối",
+      "Nước mắm",
+      "Bánh phở tươi"
+    ],
+    "steps": [
+      "Rửa sạch xương bò, luộc qua nước sôi",
+      "Nấu nước dùng: xương bò + cà rốt + gừng + hành + gia vị",
+      "Nấu từ 2-3 giờ đến khi nước dùng có màu vàng nhạt",
+      "Cắt thịt bò thành lát mỏng",
+      "Nấu bánh phở trong nước sôi",
+      "Chế biến: cho bánh phở vào tô, đặt thịt, đổ nước dùng nóng",
+      "Thêm rau sống, nước mắm, chanh theo thích"
+    ]
+  },
+  {
+    "title": "Cơm Tấm Sài Gòn",
+    "description": "Cơm tấm nóng hổi với thịt nướng, trứng ốp la và rau sống",
+    "imageUrl": "https://via.placeholder.com/300x200?text=Com+Tam",
+    "durationInMinutes": 45,
+    "type": "Việt Nam",
+    "ingredients": [
+      "3 tô cơm tấm",
+      "300g thịt ba chỉ",
+      "3 quả trứng gà",
+      "2 cái cà chua",
+      "1/2 dưa chuột",
+      "Rau sống (mùi, hành, xà lách)",
+      "Nước mắm chua cay",
+      "Dầu ăn",
+      "Muối, tiêu"
+    ],
+    "steps": [
+      "Ướp thịt ba chỉ: muối, tiêu, mắm cá, hành tây",
+      "Để ngấm 30 phút",
+      "Nướng thịt trên than hoặc bếp nóng 15-20 phút",
+      "Chiên trứng trong dầu nóng đến vàng gạo",
+      "Cắt cà chua, dưa chuột thành miếng vừa ăn",
+      "Bày đĩa: cơm ở giữa, thịt nướng + trứng ở trên, rau quanh",
+      "Rưới nước mắm chua cay, thêm hành phi"
+    ]
+  },
+  {
+    "title": "Bánh Mỳ Việt",
+    "description": "Bánh mỳ Sài Gòn ngon cơm với thịt, pâté và rau sống",
+    "imageUrl": "https://via.placeholder.com/300x200?text=Banh+My",
+    "durationInMinutes": 20,
+    "type": "Việt Nam",
+    "ingredients": [
+      "1 chiếc bánh mỳ",
+      "100g thịt heo",
+      "50g pâté",
+      "50g chả cốt dừa",
+      "2 lát dưa hành",
+      "1 cái cà chua",
+      "1/2 dưa chuột",
+      "Rau mùi tây",
+      "Mayonnaise",
+      "Nước mắm cay"
+    ],
+    "steps": [
+      "Cắt bánh mỳ dọc theo chiều dài, bỏ bột dày ở giữa",
+      "Phết pâté + mayonnaise vào bánh",
+      "Xếp thịt luộc, chả cốt dừa, dưa hành",
+      "Xếp lên cà chua, dưa chuột, rau mùi tây",
+      "Rưới nước mắm cay",
+      "Ấn nhẹ và thưởng thức"
+    ]
+  },
+  {
+    "title": "Gà Kho Tộ",
+    "description": "Gà kho tộ thơm ngon với hành, tỏi và mắm",
+    "imageUrl": "https://via.placeholder.com/300x200?text=Ga+Kho+To",
+    "durationInMinutes": 60,
+    "type": "Việt Nam",
+    "ingredients": [
+      "1 con gà (1.5-2 kg)",
+      "300g hành khô",
+      "30g tỏi",
+      "20g gừng",
+      "3 thìa mắm cá",
+      "1 thìa đường",
+      "2 cái ớt",
+      "Dầu ăn",
+      "Muối, tiêu"
+    ],
+    "steps": [
+      "Cắt gà thành từng miếng vừa ăn",
+      "Sơ chế gà qua nước nóng",
+      "Cắt hành + tỏi thành lát",
+      "Rán hành + tỏi trong dầu nóng",
+      "Thêm gà vào, rán vàng",
+      "Nêm: mắm, đường, muối, tiêu",
+      "Kho với hành gừng đến khi gà chín mềm",
+      "Nước sánh lại, cho ớt hạt"
+    ]
+  },
+  {
+    "title": "Bún Chả Hà Nội",
+    "description": "Bún chả nướng truyền thống Hà Nội kèm nước chấm",
+    "imageUrl": "https://via.placeholder.com/300x200?text=Bun+Cha",
+    "durationInMinutes": 40,
+    "type": "Việt Nam",
+    "ingredients": [
+      "300g thịt heo xay",
+      "100g thịt heo ba chỉ",
+      "3 muỗng cơm nước mắm",
+      "1 muỗng cơm đường",
+      "2 muỗng cơm nước chanh",
+      "2 cái tỏi",
+      "Ớt",
+      "Bún tươi",
+      "Rau sống (xà lách, xà lách xoăn, rau thơm)"
+    ],
+    "steps": [
+      "Trộn thịt heo xay: mắm, đường, tỏi, ớt",
+      "Để ngấm 20 phút",
+      "Nặn thành hình tròn, xỏ vào que",
+      "Nướng trên than đến vàng, thơm",
+      "Nấu nước chấm: mắm + nước + đường + chanh + tỏi + ớt",
+      "Luộc bún tươi",
+      "Bày bún, đặt chả nướng lên trên",
+      "Rưới nước chấm, thêm rau sống"
+    ]
+  }
+]

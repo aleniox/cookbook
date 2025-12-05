@@ -7,6 +7,7 @@ import 'shopping_list_screen.dart';
 import 'preset_recipe_screen.dart';
 import 'login_screen.dart';
 import 'settings_screen.dart'; // <-- đảm bảo đã import
+import 'ai_features_screen.dart'; // <-- thêm import AI screen
 import '../models/recipe.dart';
 import '../services/recipe_service.dart'; // <-- thêm
 import 'add_recipe_screen.dart'; // <-- dùng màn AddRecipeScreen duy nhất
@@ -451,6 +452,18 @@ class _MainAppLayoutState extends State<MainAppLayout> {
             ),
             const Divider(),
             ListTile(
+              leading: Icon(Icons.auto_awesome, color: color),
+              title: const Text('Tính Năng AI'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const AIFeaturesScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Cài đặt'),
               onTap: () async {
@@ -524,23 +537,9 @@ class _MainAppLayoutState extends State<MainAppLayout> {
 
             // Nội dung chính
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return InteractiveViewer(
-                    panEnabled: true,
-                    boundaryMargin: const EdgeInsets.all(20),
-                    minScale: 0.9,
-                    maxScale: 2.5,
-                    child: SizedBox(
-                      width: constraints.maxWidth,
-                      height: constraints.maxHeight,
-                      child: _selectedIndex == 0
-                          ? _buildRecipeTab()
-                          : _screens[_selectedIndex],
-                    ),
-                  );
-                },
-              ),
+              child: _selectedIndex == 0
+                  ? _buildRecipeTab()
+                  : _screens[_selectedIndex],
             ),
           ],
         ),

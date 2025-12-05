@@ -10,9 +10,6 @@ Future<void> main() async {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  // TODO: nếu cần, bạn có thể tạo bảng SQLite ban đầu ở đây
-  // await RecipeService.initDatabase();
-
   runApp(const RecipeApp());
 }
 
