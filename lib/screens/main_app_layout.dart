@@ -195,9 +195,9 @@ class _MainAppLayoutState extends State<MainAppLayout> {
   Widget _buildRecipeTab() {
     // Áp dụng tìm kiếm & lọc
     final displayed = _myRecipes.where((r) {
-      final text = r.toString().toLowerCase();
+      final title = r.title.toLowerCase();
       final matchSearch =
-          _searchQuery.isEmpty || text.contains(_searchQuery.toLowerCase());
+          _searchQuery.isEmpty || title.contains(_searchQuery.toLowerCase());
       final matchFilter = !_filterPlannedOnly || _plannedRecipes.contains(r);
       return matchSearch && matchFilter;
     }).toList();
@@ -243,226 +243,21 @@ class _MainAppLayoutState extends State<MainAppLayout> {
       );
     }
 
-    if (_useGrid) {
-      // Grid: thẻ mở chi tiết khi nhấn, chỉ thêm vào kế hoạch khi nhấn icon
-      return RefreshIndicator(
-        onRefresh: _refreshRecipes,
-        child: GridView.builder(
-          padding: const EdgeInsets.all(12),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: _gridCrossAxisCount,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.92,
-          ),
-          itemCount: displayed.length,
-          itemBuilder: (context, index) {
-            final recipe = displayed[index];
-            final added = _plannedRecipes.contains(recipe);
-
-            double aspect = _gridCrossAxisCount == 1
-                ? 1.5
-                : (_gridCrossAxisCount == 2 ? 0.95 : 0.85);
-
-            return Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => RecipeDetailScreen(
-                        recipe: recipe,
-                        onPlanAdded: _addRecipeToPlan,
-                      ),
-                    ),
-                  );
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Image area
-                    AspectRatio(
-                      aspectRatio: aspect,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // Image (network or asset)
-                          Builder(builder: (ctx) {
-                            final img = recipe.imageUrl;
-                            if (img.isNotEmpty && (img.startsWith('http') || img.startsWith('https'))) {
-                              return Image.network(
-                                img,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: Theme.of(context).colorScheme.surfaceVariant,
-                                  child: const Icon(Icons.fastfood, size: 48),
-                                ),
-                              );
-                            } else if (img.isNotEmpty) {
-                              return Image.asset(
-                                img,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: Theme.of(context).colorScheme.surfaceVariant,
-                                  child: const Icon(Icons.fastfood, size: 48),
-                                ),
-                              );
-                            } else {
-                              return Container(
-                                color: Theme.of(context).colorScheme.surfaceVariant,
-                                child: const Center(child: Icon(Icons.fastfood, size: 48)),
-                              );
-                            }
-                          }),
-
-                          // Gradient overlay
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.45),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          // Title and meta at bottom
-                          Positioned(
-                            left: 8,
-                            right: 8,
-                            bottom: 8,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  recipe.toString(),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.12),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.schedule, size: 12, color: Colors.white70),
-                                          const SizedBox(width: 6),
-                                          Text('${recipe.durationInMinutes}m', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.12),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.category, size: 12, color: Colors.white70),
-                                          const SizedBox(width: 6),
-                                          Text(recipe.type, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Bottom area: counts + actions
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  recipe.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${recipe.ingredients.length} nguyên liệu • ${recipe.steps.length} bước',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Actions
-                          IconButton(
-                            tooltip: added ? 'Đã thêm' : 'Thêm vào kế hoạch',
-                            icon: Icon(added ? Icons.check_circle : Icons.playlist_add, color: added ? Colors.green : null),
-                            onPressed: added
-                                ? null
-                                : () {
-                                    _addRecipeToPlan(recipe);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Đã thêm vào kế hoạch: ${recipe.toString()}')),
-                                    );
-                                  },
-                          ),
-                          IconButton(
-                            tooltip: 'Xóa công thức',
-                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                            onPressed: () => _confirmAndDelete(recipe),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    // List view only
+    return RefreshIndicator(
+      onRefresh: _refreshRecipes,
+      child: RecipeListScreen(
+        initialRecipes: displayed,
+        onPlanAdded: _addRecipeToPlan,
+        onRecipeDeleted: (recipe) {
+          setState(() {
+            _myRecipes.removeWhere(
+              (r) => r.id == recipe.id || r.title == recipe.title,
             );
-          },
-        ),
-      );
-    } else {
-      // List giữ nguyên, thêm RefreshIndicator bao ngoài
-      return RefreshIndicator(
-        onRefresh: _refreshRecipes,
-        child: RecipeListScreen(
-          initialRecipes: displayed,
-          onPlanAdded: _addRecipeToPlan,
-          onRecipeDeleted: (recipe) {
-            // Đồng bộ parent list nếu một công thức bị xóa ở child
-            setState(() {
-              _myRecipes.removeWhere(
-                (r) => r.id == recipe.id || r.title == recipe.title,
-              );
-            });
-          },
-        ),
-      );
-    }
+          });
+        },
+      ),
+    );
   }
 
   // Mở màn hình tạo công thức mới (AddRecipeScreen) và refresh danh sách khi có thay đổi
@@ -544,9 +339,7 @@ class _MainAppLayoutState extends State<MainAppLayout> {
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const AIFeaturesScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const AIFeaturesScreen()),
                 );
               },
             ),
