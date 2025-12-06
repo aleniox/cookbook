@@ -84,7 +84,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           final total = existQty + quantity;
 
           combined[key] = IngredientItem(
-            name: unit.isNotEmpty ? "$total $unit $baseName" : "$total $baseName",
+            name: unit.isNotEmpty
+                ? "$total $unit $baseName"
+                : "$total $baseName",
             isChecked: exist.isChecked || item.isChecked,
           );
         } else {
@@ -105,7 +107,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   void _toggleChecked(IngredientItem item) {
     setState(() {
       item.isChecked = !item.isChecked;
-      shoppingItems.sort((a, b) => (a.isChecked ? 1 : 0) - (b.isChecked ? 1 : 0));
+      shoppingItems.sort(
+        (a, b) => (a.isChecked ? 1 : 0) - (b.isChecked ? 1 : 0),
+      );
     });
   }
 
@@ -115,60 +119,69 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       children: [
         Column(
           children: [
-            // 🔥 Hiển thị ảnh chụp
+            // Captured images
             if (capturedImages.isNotEmpty)
-              SizedBox(
+              Container(
                 height: 110,
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+                ),
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: capturedImages.length,
                   itemBuilder: (context, i) {
                     return Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.file(
-                          File(capturedImages[i].path),
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: _buildImageThumbnail(i),
                     );
                   },
                 ),
               ),
 
+            // Shopping list
             Expanded(
               child: shoppingItems.isEmpty
-                  ? const Center(
-                      child: Text('Chưa có nguyên liệu nào trong danh sách.'),
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.shopping_cart_outlined,
+                            size: 56,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Chưa có nguyên liệu nào',
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Thêm công thức để bắt đầu',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     )
                   : ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 8,
+                      ),
                       itemCount: shoppingItems.length,
                       itemBuilder: (context, index) {
                         final item = shoppingItems[index];
-                        return CheckboxListTile(
-                          title: Text(
-                            item.name,
-                            style: TextStyle(
-                              decoration: item.isChecked
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                              color: item.isChecked ? Colors.grey : Colors.black,
-                            ),
-                          ),
-                          value: item.isChecked,
-                          activeColor: Colors.teal,
-                          onChanged: (_) => _toggleChecked(item),
-                        );
+                        return _buildIngredientTile(item, index);
                       },
                     ),
             ),
           ],
         ),
 
-        // 🔥 Floating Button chụp ảnh
+        // Camera FAB
         Positioned(
           bottom: 20,
           right: 20,
@@ -179,6 +192,72 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildImageThumbnail(int index) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.file(
+            File(capturedImages[index].path),
+            width: 98,
+            height: 98,
+            fit: BoxFit.cover,
+          ),
+        ),
+        Positioned(
+          top: 2,
+          right: 2,
+          child: GestureDetector(
+            onTap: () => setState(() => capturedImages.removeAt(index)),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.9),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: Colors.red.withOpacity(0.4), blurRadius: 3),
+                ],
+              ),
+              padding: const EdgeInsets.all(2),
+              child: const Icon(Icons.close, size: 16, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIngredientTile(IngredientItem item, int index) {
+    return AnimatedOpacity(
+      opacity: item.isChecked ? 0.5 : 1.0,
+      duration: const Duration(milliseconds: 300),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(color: Colors.grey.withOpacity(0.08), blurRadius: 2),
+          ],
+        ),
+        child: CheckboxListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+          title: Text(
+            item.name,
+            style: TextStyle(
+              decoration: item.isChecked ? TextDecoration.lineThrough : null,
+              color: item.isChecked ? Colors.grey[500] : Colors.black87,
+              fontSize: 14,
+            ),
+          ),
+          value: item.isChecked,
+          activeColor: Colors.teal,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          onChanged: (_) => _toggleChecked(item),
+        ),
+      ),
     );
   }
 }

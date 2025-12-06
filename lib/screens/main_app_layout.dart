@@ -296,15 +296,19 @@ class _MainAppLayoutState extends State<MainAppLayout> {
               : 'Thư viện',
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        // Xóa bottom search ở AppBar — sẽ dùng SearchFilterBar trong body
       ),
 
       drawer: Drawer(
+        elevation: 0,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: color),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.zero,
+              ),
               child: const Text(
                 'Menu Nấu Ăn',
                 style: TextStyle(
@@ -332,7 +336,7 @@ class _MainAppLayoutState extends State<MainAppLayout> {
               selected: _selectedIndex == 2,
               onTap: () => _onItemTapped(2),
             ),
-            const Divider(),
+            const Divider(height: 0),
             ListTile(
               leading: Icon(Icons.auto_awesome, color: color),
               title: const Text('Tính Năng AI'),
