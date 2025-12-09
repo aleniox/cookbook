@@ -1,5 +1,6 @@
 /// Configuration cho AI Backend URL
 /// Chỉ sử dụng server URL
+library;
 
 class AppConfig {
   // Backend Server URL - Cập nhật theo server thực tế

@@ -117,7 +117,11 @@ class _PresetRecipeScreenState extends State<PresetRecipeScreen> {
                           label: const Text('≤30m'),
                           selected: _activeFilters.contains('≤30m'),
                           onSelected: (s) => setState(() {
-                            if (s) _activeFilters.add('≤30m'); else _activeFilters.remove('≤30m');
+                            if (s) {
+                              _activeFilters.add('≤30m');
+                            } else {
+                              _activeFilters.remove('≤30m');
+                            }
                             _currentPage = 0;
                           }),
                         ),
@@ -125,7 +129,11 @@ class _PresetRecipeScreenState extends State<PresetRecipeScreen> {
                           label: const Text('≤60m'),
                           selected: _activeFilters.contains('≤60m'),
                           onSelected: (s) => setState(() {
-                            if (s) _activeFilters.add('≤60m'); else _activeFilters.remove('≤60m');
+                            if (s) {
+                              _activeFilters.add('≤60m');
+                            } else {
+                              _activeFilters.remove('≤60m');
+                            }
                             _currentPage = 0;
                           }),
                         ),
@@ -133,7 +141,11 @@ class _PresetRecipeScreenState extends State<PresetRecipeScreen> {
                           label: const Text('4+ nguyên liệu'),
                           selected: _activeFilters.contains('4+'),
                           onSelected: (s) => setState(() {
-                            if (s) _activeFilters.add('4+'); else _activeFilters.remove('4+');
+                            if (s) {
+                              _activeFilters.add('4+');
+                            } else {
+                              _activeFilters.remove('4+');
+                            }
                             _currentPage = 0;
                           }),
                         ),

@@ -11,7 +11,7 @@ import 'ai_features_screen.dart'; // <-- thêm import AI screen
 import '../models/recipe.dart';
 import '../services/recipe_service.dart'; // <-- thêm
 import 'add_recipe_screen.dart'; // <-- dùng màn AddRecipeScreen duy nhất
-import 'recipe_detail_screen.dart'; // <-- thêm import để mở chi tiết
+// <-- thêm import để mở chi tiết
 import '../helpers/database_helper.dart'; // <-- thêm for delete/undo
 import '../models/ingredient_item.dart'; // <-- thêm for undo
 

@@ -634,7 +634,7 @@ class _AIFeaturesScreenState extends State<AIFeaturesScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              ...(value as List).map((item) {
+              ...(value).map((item) {
                 return Padding(
                   padding: const EdgeInsets.only(left: 8, bottom: 4),
                   child: Text('• $item', style: const TextStyle(fontSize: 13)),
