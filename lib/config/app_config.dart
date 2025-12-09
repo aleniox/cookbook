@@ -3,7 +3,7 @@
 
 class AppConfig {
   // Backend Server URL - Cập nhật theo server thực tế
-  static const String backendUrl = 'http://192.168.21.109:5000/api';
+  static const String backendUrl = 'http://192.168.1.199:5000/api';
   // Ví dụ: 'http://192.168.1.222:5000/api'
   // Hoặc: 'https://cookbook-ai-backend.herokuapp.com/api'
 }

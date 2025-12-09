@@ -35,115 +35,158 @@ class _AIFeaturesScreenState extends State<AIFeaturesScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _checkConnection,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: Stack(
           children: [
-            // Status card
-            Card(
-              color: _isConnected
-                  ? Colors.green.withOpacity(0.1)
-                  : Colors.red.withOpacity(0.1),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(
-                      _isConnected ? Icons.check_circle : Icons.error_outline,
-                      color: _isConnected ? Colors.green : Colors.red,
-                      size: 32,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Status card - cleaner layout using ListTile style
+                  Card(
+                    color: _isConnected ? Colors.green.withOpacity(0.06) : Colors.red.withOpacity(0.06),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
                         children: [
-                          Text(
-                            _isConnected ? 'Kết nối thành công' : 'Chưa kết nối',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: _isConnected ? Colors.green.withOpacity(0.14) : Colors.red.withOpacity(0.14),
+                            child: Icon(
+                              _isConnected ? Icons.check_circle : Icons.cloud_off,
+                              color: _isConnected ? Colors.green : Colors.red,
+                              size: 26,
                             ),
                           ),
-                          Text(
-                            _isConnected
-                                ? 'Backend AI sẵn sàng'
-                                : 'Vui lòng chạy backend Python',
-                            style: const TextStyle(fontSize: 12),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _isConnected ? 'Backend AI: Đã kết nối' : 'Backend AI: Chưa kết nối',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _isConnected
+                                      ? 'Dịch vụ AI sẵn sàng để sử dụng các tính năng.'
+                                      : 'Chạy backend Python trong `python_backend/` để bật các tính năng AI.',
+                                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: _checkConnection,
+                                icon: const Icon(Icons.refresh, size: 16),
+                                label: const Text('Kiểm tra'),
+                                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                              ),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Hướng dẫn chạy Backend'),
+                                      content: const Text('Mở terminal và chạy:\n\npython -m flask run\n\nTrong thư mục `python_backend/`.'),
+                                      actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Đóng'))],
+                                    ),
+                                  );
+                                },
+                                child: const Text('Hướng dẫn'),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // Features
+                  if (_isConnected) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 6.0),
+                      child: Text('Tính năng', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    ),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const double tileWidth = 360.0;
+                        const double tileHeight = 110.0;
+                        int columns = (constraints.maxWidth / tileWidth).floor();
+                        if (columns < 1) columns = 1;
+
+                        final features = [
+                          {'icon': Icons.lightbulb, 'title': 'Gợi ý công thức', 'subtitle': 'Gợi ý từ nguyên liệu có sẵn', 'tap': _showSuggestRecipeDialog},
+                          {'icon': Icons.calendar_today, 'title': 'Kế hoạch ăn uống', 'subtitle': 'Tạo kế hoạch 7 ngày', 'tap': _showMealPlanDialog},
+                          {'icon': Icons.restaurant_menu, 'title': 'Phân tích dinh dưỡng', 'subtitle': 'Ước tính dinh dưỡng', 'tap': _showAnalyzeRecipeDialog},
+                          {'icon': Icons.local_fire_department, 'title': 'Mẹo nấu nướng', 'subtitle': 'Lời khuyên và khắc phục sự cố', 'tap': _showCookingTipsDialog},
+                        ];
+
+                        return GridView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columns,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            mainAxisExtent: tileHeight,
+                          ),
+                          itemCount: features.length,
+                          itemBuilder: (ctx, i) {
+                            final f = features[i];
+                            return SizedBox(
+                              width: tileWidth,
+                              height: tileHeight,
+                              child: _buildFeatureCard(
+                                icon: f['icon'] as IconData,
+                                title: f['title'] as String,
+                                subtitle: f['subtitle'] as String,
+                                onTap: f['tap'] as VoidCallback,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ] else ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 48.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.cloud_off, size: 72, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          const Text('Backend chưa kết nối', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          const Text('Vui lòng chạy backend để sử dụng các tính năng AI.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                          const SizedBox(height: 16),
+                          ElevatedButton(onPressed: _checkConnection, child: const Text('Kiểm tra lại')),
+                        ],
+                      ),
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
 
-            // Feature tiles
-            if (_isConnected) ...[
-              _buildFeatureTile(
-                icon: Icons.lightbulb,
-                title: 'Gợi ý công thức',
-                subtitle: 'AI gợi ý công thức từ nguyên liệu bạn có',
-                onTap: () => _showSuggestRecipeDialog(),
-              ),
-              const SizedBox(height: 12),
-              _buildFeatureTile(
-                icon: Icons.calendar_today,
-                title: 'Kế hoạch ăn uống',
-                subtitle: 'Tạo kế hoạch ăn uống hàng tuần từ AI',
-                onTap: () => _showMealPlanDialog(),
-              ),
-              const SizedBox(height: 12),
-              _buildFeatureTile(
-                icon: Icons.restaurant_menu,
-                title: 'Phân tích dinh dưỡng',
-                subtitle: 'AI phân tích thông tin dinh dưỡng công thức',
-                onTap: () => _showAnalyzeRecipeDialog(),
-              ),
-              const SizedBox(height: 12),
-              _buildFeatureTile(
-                icon: Icons.local_fire_department,
-                title: 'Mẹo nấu nướng',
-                subtitle: 'Lấy mẹo nấu nướng từ AI',
-                onTap: () => _showCookingTipsDialog(),
-              ),
-            ] else ...[
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 48),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.cloud_off,
-                        size: 64,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Backend chưa kết nối',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Vui lòng chạy:\npython -m flask run\ntrong thư mục python_backend/',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _checkConnection,
-                        child: const Text('Kiểm tra lại'),
-                      ),
-                    ],
-                  ),
+            if (_isLoading)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black26,
+                  child: const Center(child: CircularProgressIndicator()),
                 ),
               ),
-            ],
           ],
         ),
       ),
@@ -161,33 +204,68 @@ class _AIFeaturesScreenState extends State<AIFeaturesScreen> {
       borderRadius: BorderRadius.circular(12),
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              Icon(icon, size: 32, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(width: 16),
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                child: Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+              const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: _isLoading ? null : onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                child: Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                    const SizedBox(height: 4),
+                    Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
             ],
           ),
         ),
