@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -16,6 +20,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   bool _loading = false;
   String _joinedText = '';
+  File? _avatarFile;
+  String? _avatarPath;
 
   @override
   void initState() {
@@ -32,12 +38,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Future<void> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
+    final avatar = prefs.getString('avatarPath') ?? '';
+    File? avatarFile;
+    if (avatar.isNotEmpty) {
+      final f = File(avatar);
+      if (await f.exists()) avatarFile = f;
+    }
     setState(() {
       _emailCtrl.text = prefs.getString('email') ?? '';
       _nameCtrl.text = prefs.getString('displayName') ?? '';
       // optional: show when user first used app (if stored)
       final joined = prefs.getString('joinedAt');
       _joinedText = joined ?? '';
+      _avatarFile = avatarFile;
+      _avatarPath = avatarFile?.path;
     });
   }
 
@@ -65,8 +79,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         title: const Text('Xác nhận'),
         content: const Text('Bạn có chắc muốn xóa thông tin đăng nhập?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Hủy')),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Xóa')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Xóa'),
+          ),
         ],
       ),
     );
@@ -119,6 +139,53 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  Future<void> _pickAvatar() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1200,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      final appDir = await getApplicationDocumentsDirectory();
+      final idx = picked.path.lastIndexOf('.');
+      final ext = idx != -1 ? picked.path.substring(idx) : '';
+      final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}$ext';
+      final saved = await File(picked.path).copy('${appDir.path}/$fileName');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('avatarPath', saved.path);
+      if (!mounted) return;
+      setState(() {
+        _avatarFile = saved;
+        _avatarPath = saved.path;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Không thể tải ảnh: $e')));
+    }
+  }
+
+  Future<void> _removeAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('avatarPath');
+    if (_avatarFile != null) {
+      try {
+        if (await _avatarFile!.exists()) await _avatarFile!.delete();
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    setState(() {
+      _avatarFile = null;
+      _avatarPath = null;
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Đã xóa avatar.')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = _nameCtrl.text.trim();
@@ -142,9 +209,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               children: [
                 Card(
                   elevation: 3,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 16,
+                    ),
                     child: Column(
                       children: [
                         Stack(
@@ -153,38 +225,81 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             CircleAvatar(
                               radius: 44,
                               backgroundColor: avatarBg,
-                              child: Text(
-                                initials,
-                                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-                              ),
+                              backgroundImage: _avatarFile != null
+                                  ? FileImage(_avatarFile!)
+                                  : null,
+                              child: _avatarFile == null
+                                  ? Text(
+                                      initials,
+                                      style: const TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : null,
                             ),
                             Material(
                               color: Colors.transparent,
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(20),
                                 onTap: () {
-                                  // currently we don't pick image; focus name field as "edit"
-                                  FocusScope.of(context).requestFocus(FocusNode());
-                                  showModalBottomSheet(
+                                  FocusScope.of(
+                                    context,
+                                  ).requestFocus(FocusNode());
+                                  showModalBottomSheet<void>(
                                     context: context,
-                                    builder: (_) => Padding(
+                                    builder: (ctx) => Padding(
                                       padding: const EdgeInsets.all(16),
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Text('Avatar', style: TextStyle(fontWeight: FontWeight.bold)),
+                                          const Text(
+                                            'Avatar',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                           const SizedBox(height: 12),
                                           ListTile(
-                                            leading: const Icon(Icons.person),
-                                            title: const Text('Dùng chữ cái đầu (mặc định)'),
-                                            onTap: () => Navigator.of(context).pop(),
+                                            leading: const Icon(
+                                              Icons.photo_library,
+                                            ),
+                                            title: const Text('Chọn ảnh'),
+                                            onTap: () {
+                                              Navigator.of(ctx).pop();
+                                              _pickAvatar();
+                                            },
                                           ),
                                           ListTile(
-                                            leading: const Icon(Icons.info_outline),
-                                            title: const Text('Chọn ảnh (tương lai)'),
-                                            subtitle: const Text('Chức năng chọn ảnh sẽ được hỗ trợ sau'),
-                                            onTap: () => Navigator.of(context).pop(),
+                                            leading: const Icon(Icons.person),
+                                            title: const Text(
+                                              'Dùng chữ cái đầu (mặc định)',
+                                            ),
+                                            onTap: () {
+                                              Navigator.of(ctx).pop();
+                                              _removeAvatar();
+                                            },
                                           ),
+                                          if (_avatarFile != null) ...[
+                                            const Divider(height: 12),
+                                            ListTile(
+                                              leading: const Icon(
+                                                Icons.delete_forever,
+                                                color: Colors.redAccent,
+                                              ),
+                                              title: const Text(
+                                                'Xóa ảnh',
+                                                style: TextStyle(
+                                                  color: Colors.redAccent,
+                                                ),
+                                              ),
+                                              onTap: () {
+                                                Navigator.of(ctx).pop();
+                                                _removeAvatar();
+                                              },
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ),
@@ -193,20 +308,32 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 child: CircleAvatar(
                                   radius: 16,
                                   backgroundColor: Colors.white,
-                                  child: Icon(Icons.edit, size: 16, color: Theme.of(context).colorScheme.primary),
+                                  child: Icon(
+                                    Icons.edit,
+                                    size: 16,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
                                 ),
                               ),
-                            )
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Text(
                           name.isNotEmpty ? name : 'Người dùng',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         if (_joinedText.isNotEmpty) ...[
                           const SizedBox(height: 6),
-                          Text('Tham gia: ${_joinedText.split('T').first}', style: TextStyle(color: Colors.grey[600])),
+                          Text(
+                            'Tham gia: ${_joinedText.split('T').first}',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
                         ],
                       ],
                     ),
@@ -215,7 +342,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 const SizedBox(height: 16),
                 Card(
                   elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Form(
@@ -231,7 +360,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                             textInputAction: TextInputAction.done,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'Vui lòng nhập tên hiển thị';
+                              if (v == null || v.trim().isEmpty)
+                                return 'Vui lòng nhập tên hiển thị';
                               return null;
                             },
                           ),
@@ -264,7 +394,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 child: FilledButton(
                                   onPressed: _loading ? null : _saveProfile,
                                   child: _loading
-                                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                      ? const SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
                                       : const Text('Lưu thay đổi'),
                                 ),
                               ),
@@ -272,7 +409,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               Expanded(
                                 child: OutlinedButton(
                                   onPressed: _clearCredentials,
-                                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                  ),
                                   child: const Text('Xóa đăng nhập'),
                                 ),
                               ),
@@ -286,16 +425,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 const SizedBox(height: 16),
                 // Useful actions
                 Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Column(
                     children: [
                       ListTile(
                         leading: const Icon(Icons.lock_outline),
                         title: const Text('Đổi mật khẩu'),
-                        subtitle: const Text('Dùng chức năng thay đổi mật khẩu nếu có'),
+                        subtitle: const Text(
+                          'Dùng chức năng thay đổi mật khẩu nếu có',
+                        ),
                         onTap: () {
                           // placeholder: show info
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chức năng đổi mật khẩu chưa được tích hợp.')));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Chức năng đổi mật khẩu chưa được tích hợp.',
+                              ),
+                            ),
+                          );
                         },
                       ),
                       const Divider(height: 0),
@@ -303,14 +452,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         leading: const Icon(Icons.help_outline),
                         title: const Text('Trợ giúp & Hỗ trợ'),
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mở trang trợ giúp...')));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Mở trang trợ giúp...'),
+                            ),
+                          );
                         },
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Phiên bản ứng dụng: 1.0.0', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600])),
+                Text(
+                  'Phiên bản ứng dụng: 1.0.0',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
                 const SizedBox(height: 8),
               ],
             ),

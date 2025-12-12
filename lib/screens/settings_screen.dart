@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'user_profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final bool initialUseGrid;
@@ -53,6 +54,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: ListView(
         children: [
+          ListTile(
+            leading: const Icon(Icons.account_circle),
+            title: const Text('Tài khoản'),
+            subtitle: const Text('Quản lý thông tin tài khoản của bạn'),
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+              );
+              // no explicit result expected; settings remain functional
+            },
+          ),
+          const Divider(height: 0),
           SwitchListTile(
             title: const Text('Hiển thị dạng lưới'),
             subtitle: const Text('Hiển thị các công thức theo dạng lưới'),

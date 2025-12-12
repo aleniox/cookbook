@@ -8,7 +8,7 @@ import 'preset_recipe_screen.dart';
 import 'login_screen.dart';
 import 'settings_screen.dart'; // <-- đảm bảo đã import
 import 'ai_features_screen.dart'; // <-- thêm import AI screen
-import 'user_profile_screen.dart'; // <-- NEW: import màn User Profile
+// user_profile_screen is now reachable via Settings; import removed
 import '../models/recipe.dart';
 import '../services/recipe_service.dart'; // <-- thêm
 import 'add_recipe_screen.dart'; // <-- dùng màn AddRecipeScreen duy nhất
@@ -338,16 +338,7 @@ class _MainAppLayoutState extends State<MainAppLayout> {
               onTap: () => _onItemTapped(2),
             ),
             const Divider(height: 0),
-            ListTile(
-              leading: Icon(Icons.person, color: color),
-              title: const Text('Tài khoản'),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const UserProfileScreen()),
-                );
-              },
-            ),
+            // 'Tài khoản' moved into Settings; tile removed from drawer
             ListTile(
               leading: Icon(Icons.auto_awesome, color: color),
               title: const Text('Tính Năng AI'),
