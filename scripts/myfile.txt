@@ -1,0 +1,98 @@
+1s
+
+war+đỏ
+war+beast                   Tusk champion
+hunter+beast                Thợ săn rái cá
+beast+halforc+druid         unicorn
+glacier+warlock             doctor
+glacier+shaman              defector
+glacier+priest              fortune teller
+egersis+knight              evil knight
+human+mage                  the source
+dragon+egersis+mage         winter chiropteran
+goblin+ancestor+hunter      soul breaker
+goblin+mech                 sky breaker
+goblin+mech                 heaven bomber
+demon+wizard                grimtouch
+feathered+hunter            shining archer
+feathered+wizard            carnation elf
+kira+mage                   ogre mage
+spirit+war                  stone spirit
+divinity+war                god of war
+tê giác+assassin            thị vệ thường ngày
+ác quỷ bóng đêm+warlock     nỗi kinh hoàng vô danh
+ancestor+demon+priest       giám mục ăn năn
+
+2s
+đỏ+war      swordman
+feathered+knight        lightblade knight
+feathered+hunter        wind ranger
+greater+assassin        dominator
+feathered+druid          whisper seer
+marine+assassin         abyssalcrawler
+feathered+dragon+mage   shiningdragon
+pandaman+martialist     heaven brew
+glacier+knight          forst knight
+halforc+war             sandbound aegis
+demon+knight            hell knight
+egersis+hunter          người thực thi thế giới ngầm
+dwarf+hunter            dwarf sniper
+human+mage              flame wizard
+egersis+witcher         ảnh phẫn nộ
+đỏ+hunter               skull hunter
+spirit+assassin         water spirit
+divinity+priest         goddess of light
+goblin+mech             ripper
+ancestor+warlock        chúa tể bóng tối
+marine+wizard           deep dive
+đỏ+shaman               lava shaman
+
+3s
+
+civet+mech              gem artisan
+tê giác+shaman          tế tư thường ngày
+feathered+martialist    phong vũ võ giả
+divinity+wizard         grand herald
+ác quỷ bóng đêm+assassin   ma vương sương mù
+dragon+assassin         venom
+egersis+war             ghost kid
+insectoid+assassin      lord of sand
+ancestor+knight         nữ thần chiến tranh
+spirit+mage             thunder spirit
+egersis+hunter          egersis ranger
+egersis+priest          eclipse of darkness
+egersis+dragon+hunter   umbra
+demon+warlock           shadow devil
+demon+witcher           fallen witcher
+human+knight            avenge knight
+marin+war               abyssal guard
+insectoid+beast+warlock poisonous worm
+human+beast+war         werewolf
+glacier+war             sacred lancer
+spirit+warlock          dark spirit
+feathered+druid          warpwood sage
+
+
+4s 
+feathered+witcher               taboo witcher
+demon+war                       doom arbiter
+beast+assassin                  kiếm sĩ cáo lửa
+beast+martialist                space walker
+demon+wizard                    soul devourer
+goblin+knight                   cannon granny
+goblin+kira+warlock             venomancer
+human+mage                      tortola elder
+spirit+warlock                  linh hồn lửa
+insectoid+hunter                spider queen
+egersis+mage                    blight sorcerer
+insectoid+egersis+assassin      thorn predator
+egersis+warlock                 ác mộng
+marin+hunter                    siren
+đỏ+priest                       cave prodigy
+halforc+assassin                evernight watcher
+human+dragon+knight             dragon knight
+beast+druid                     razorclaw
+human+war                       pirate captain
+feathered+assassin              shadowcrawler
+
+
