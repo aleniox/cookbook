@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/recipe.dart';
-import '../helpers/database_helper.dart';
+import '../services/recipe_service.dart';
 import '../services/preset_loader.dart';
 
 class PresetRecipeScreen extends StatefulWidget {
@@ -368,7 +368,7 @@ class _PresetRecipeScreenState extends State<PresetRecipeScreen> {
   }
 
   Future<void> _addRecipe(Recipe recipe) async {
-    final newRecipe = await DatabaseHelper.instance.createRecipe(recipe);
+    final newRecipe = await RecipeService.createRecipe(recipe);
     widget.onAddToRecipeList(newRecipe);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -6,15 +6,12 @@ import 'recipe_list_screen.dart';
 import 'shopping_list_screen.dart';
 import 'preset_recipe_screen.dart';
 import 'login_screen.dart';
-import 'settings_screen.dart'; // <-- đảm bảo đã import
-import 'ai_features_screen.dart'; // <-- thêm import AI screen
-// user_profile_screen is now reachable via Settings; import removed
+import 'settings_screen.dart';
+import 'ai_features_screen.dart';
 import '../models/recipe.dart';
-import '../services/recipe_service.dart'; // <-- thêm
-import 'add_recipe_screen.dart'; // <-- dùng màn AddRecipeScreen duy nhất
-// <-- thêm import để mở chi tiết
-import '../helpers/database_helper.dart'; // <-- thêm for delete/undo
-import '../models/ingredient_item.dart'; // <-- thêm for undo
+import '../services/recipe_service.dart';
+import 'add_recipe_screen.dart';
+import '../models/ingredient_item.dart';
 
 class MainAppLayout extends StatefulWidget {
   const MainAppLayout({super.key});
@@ -161,7 +158,7 @@ class _MainAppLayoutState extends State<MainAppLayout> {
         if (f.existsSync()) f.deleteSync();
       }
       if (backup.id != null) {
-        await DatabaseHelper.instance.deleteRecipe(backup.id!);
+        await RecipeService.deleteRecipe(backup.id!);
       }
     } catch (_) {}
 
@@ -183,20 +180,7 @@ class _MainAppLayoutState extends State<MainAppLayout> {
           label: 'Hoàn tác',
           onPressed: () async {
             try {
-              final newId = await RecipeService.insertRecipe(backup);
-              for (var ing in backup.ingredients) {
-                await RecipeService.insertIngredient(
-                  IngredientItem(
-                    id: null,
-                    name: ing.name,
-                    isChecked: ing.isChecked,
-                    recipeId: newId,
-                  ),
-                );
-              }
-              for (var step in backup.steps) {
-                await RecipeService.insertStep(newId, step);
-              }
+              await RecipeService.createRecipe(backup);
               final all = await RecipeService.getAllRecipes();
               setState(() {
                 _myRecipes.clear();
