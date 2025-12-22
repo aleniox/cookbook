@@ -52,6 +52,9 @@ class _MainAppLayoutState extends State<MainAppLayout> {
       PresetRecipeScreen(onAddToRecipeList: _addRecipeFromPreset),
     ];
 
+    // Load công thức từ database khi khởi động
+    _loadRecipesFromDatabase();
+
     // Đọc setting từ SharedPreferences
     SharedPreferences.getInstance().then((prefs) {
       setState(() {
@@ -65,6 +68,17 @@ class _MainAppLayoutState extends State<MainAppLayout> {
     });
   }
 
+  // Load công thức từ database khi khởi động
+  Future<void> _loadRecipesFromDatabase() async {
+    final recipes = await RecipeService.getAllRecipes();
+    if (mounted) {
+      setState(() {
+        _myRecipes.clear();
+        _myRecipes.addAll(recipes);
+      });
+    }
+  }
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -72,14 +86,18 @@ class _MainAppLayoutState extends State<MainAppLayout> {
   }
 
   // 🔹 Thêm món ăn từ Thư viện vào danh sách công thức
-  void _addRecipeFromPreset(Recipe recipe) {
-    if (!_myRecipes.contains(recipe)) {
+  void _addRecipeFromPreset(Recipe recipe) async {
+    // Công thức đã được lưu vào DB bởi PresetRecipeScreen
+    // Chỉ cần thêm vào danh sách nếu chưa có
+    if (mounted) {
       setState(() {
-        _myRecipes.add(recipe);
+        // Kiểm tra xem đã có trong danh sách chưa
+        final exists = _myRecipes.any((r) => r.id == recipe.id);
+        if (!exists) {
+          _myRecipes.add(recipe);
+        }
         _selectedIndex = 0; // tự động chuyển sang tab danh sách công thức
       });
-    } else {
-      setState(() => _selectedIndex = 0);
     }
   }
 
@@ -147,10 +165,11 @@ class _MainAppLayoutState extends State<MainAppLayout> {
       }
     } catch (_) {}
 
+    // Reload từ database để đồng bộ
+    final all = await RecipeService.getAllRecipes();
     setState(() {
-      _myRecipes.removeWhere(
-        (r) => r.id == backup.id || r.title == backup.title,
-      );
+      _myRecipes.clear();
+      _myRecipes.addAll(all);
       _plannedRecipes.removeWhere(
         (r) => r.id == backup.id || r.title == backup.title,
       );

@@ -119,6 +119,27 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       children: [
         Column(
           children: [
+            // Navigation bar with shopping routes button
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                border: Border(bottom: BorderSide(color: Colors.blue[200]!)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Danh sách mua sắm (${shoppingItems.length})',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // Captured images
             if (capturedImages.isNotEmpty)
               Container(

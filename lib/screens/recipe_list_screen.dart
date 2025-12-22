@@ -271,18 +271,57 @@ class _RecipeCardState extends State<RecipeCard> {
   bool _isExpanded = false;
 
   Widget loadImage(String path, {double? height, BoxFit? fit}) {
-    if (path.startsWith('http')) {
-      return Image.network(path, height: height, fit: fit);
-    } else if (path.isNotEmpty && File(path).existsSync()) {
-      return Image.file(File(path), height: height, fit: fit);
-    } else {
-      return Container(
-        height: height ?? 100,
-        width: height ?? 100,
-        color: Colors.grey[300],
-        child: const Icon(Icons.restaurant_menu, size: 50),
+    if (path.isEmpty) {
+      return _buildPlaceholder(height);
+    }
+
+    // Load từ assets
+    if (path.startsWith('assets/')) {
+      return Image.asset(
+        path,
+        height: height,
+        fit: fit ?? BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(height),
       );
     }
+
+    // Load từ network (HTTP/HTTPS)
+    if (path.startsWith('http')) {
+      return Image.network(
+        path,
+        height: height,
+        fit: fit ?? BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(height),
+      );
+    }
+
+    // Load từ file local
+    if (File(path).existsSync()) {
+      return Image.file(
+        File(path),
+        height: height,
+        fit: fit ?? BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(height),
+      );
+    }
+
+    return _buildPlaceholder(height);
+  }
+
+  Widget _buildPlaceholder(double? height) {
+    return Container(
+      height: height ?? 120,
+      width: height ?? 120,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        Icons.restaurant_menu,
+        size: 48,
+        color: Colors.grey[400],
+      ),
+    );
   }
 
   @override
@@ -325,11 +364,14 @@ class _RecipeCardState extends State<RecipeCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10.0),
-                    child: loadImage(
-                      widget.recipe.imageUrl,
-                      height: 100,
-                      fit: BoxFit.cover,
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: loadImage(
+                        widget.recipe.imageUrl,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16.0),
