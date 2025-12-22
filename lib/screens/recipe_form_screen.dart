@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../models/recipe.dart';
-import '../helpers/database_helper.dart';
+import '../services/recipe_service.dart';
 import '../models/ingredient_item.dart';
 
 class RecipeFormScreen extends StatefulWidget {
@@ -73,7 +73,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             .toList(),
       );
 
-      await DatabaseHelper.instance.createRecipe(newRecipe);
+      await RecipeService.createRecipe(newRecipe);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -17,7 +17,7 @@ CORS(app)
 
 # Khởi tạo AI Service với model tự build
 ai_service = AIService(
-    model=os.getenv('AI_MODEL', 'gemma3n:e2b'),
+    model=os.getenv('AI_MODEL', 'gemma3n:e4b'),
     host=os.getenv('AI_HOST', 
                 #    'http://192.168.1.222:8070/v1/chat/completions'
                    'http://localhost:11434/api/chat'
@@ -30,7 +30,7 @@ recipe_cloner = RecipeCloner()
 logger.info("="*50)
 logger.info("🚀 Cookbook AI Backend Starting...")
 logger.info(f"📍 Host: 0.0.0.0:5000")
-logger.info(f"🤖 AI Model: {os.getenv('AI_MODEL', 'gemma3n:e2b')}")
+logger.info(f"🤖 AI Model: {os.getenv('AI_MODEL', 'gemma3n:e4b')}")
 logger.info(f"🔗 AI Host: {os.getenv('AI_HOST', 'http://localhost:11434/api/chat')}")
 logger.info("="*50)
 

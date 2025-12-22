@@ -66,26 +66,11 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       durationInMinutes: int.tryParse(_durationController.text) ?? 0,
       type: _selectedType!,
       imageUrl: imagePath,
+      ingredients: _ingredients.map((name) => IngredientItem(name: name, isChecked: false)).toList(),
+      steps: _steps,
     );
 
-    final recipeId = await RecipeService.insertRecipe(recipe);
-
-    // Lưu ingredients
-    for (var name in _ingredients) {
-      await RecipeService.insertIngredient(
-        IngredientItem(
-          id: null,
-          name: name,
-          isChecked: false,
-          recipeId: recipeId,
-        ),
-      );
-    }
-
-    // Lưu steps
-    for (var step in _steps) {
-      await RecipeService.insertStep(recipeId, step);
-    }
+    await RecipeService.createRecipe(recipe);
 
     if (!mounted) return;
     Navigator.pop(context, true);

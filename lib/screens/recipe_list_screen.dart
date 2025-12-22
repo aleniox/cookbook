@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 import 'add_recipe_screen.dart';
-import '../helpers/database_helper.dart';
 import 'recipe_detail_screen.dart';
 import '../models/ingredient_item.dart';
 
@@ -124,7 +123,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
           final f = File(backup.imageUrl);
           if (f.existsSync()) f.deleteSync();
         }
-        await DatabaseHelper.instance.deleteRecipe(backup.id!);
+        await RecipeService.deleteRecipe(backup.id!);
       }
     } catch (_) {}
 
@@ -145,24 +144,13 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
         action: SnackBarAction(
           label: 'Hoàn tác',
           onPressed: () async {
-            // chèn lại recipe + nguyên liệu + bước
-            final newId = await RecipeService.insertRecipe(backup);
-            for (var ing in backup.ingredients) {
-              await RecipeService.insertIngredient(
-                IngredientItem(
-                  id: null,
-                  name: ing.name,
-                  isChecked: ing.isChecked,
-                  recipeId: newId,
-                ),
-              );
+            try {
+              await RecipeService.createRecipe(backup);
+              await _loadRecipes();
+              widget.onRecipeDeleted?.call(backup);
+            } catch (_) {
+              // ignore
             }
-            for (var step in backup.steps) {
-              await RecipeService.insertStep(newId, step);
-            }
-            await _loadRecipes();
-            // notify parent to reload if needed
-            widget.onRecipeDeleted?.call(backup); // parent may reload lists
           },
         ),
       ),
@@ -271,18 +259,57 @@ class _RecipeCardState extends State<RecipeCard> {
   bool _isExpanded = false;
 
   Widget loadImage(String path, {double? height, BoxFit? fit}) {
-    if (path.startsWith('http')) {
-      return Image.network(path, height: height, fit: fit);
-    } else if (path.isNotEmpty && File(path).existsSync()) {
-      return Image.file(File(path), height: height, fit: fit);
-    } else {
-      return Container(
-        height: height ?? 100,
-        width: height ?? 100,
-        color: Colors.grey[300],
-        child: const Icon(Icons.restaurant_menu, size: 50),
+    if (path.isEmpty) {
+      return _buildPlaceholder(height);
+    }
+
+    // Load từ assets
+    if (path.startsWith('assets/')) {
+      return Image.asset(
+        path,
+        height: height,
+        fit: fit ?? BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(height),
       );
     }
+
+    // Load từ network (HTTP/HTTPS)
+    if (path.startsWith('http')) {
+      return Image.network(
+        path,
+        height: height,
+        fit: fit ?? BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(height),
+      );
+    }
+
+    // Load từ file local
+    if (File(path).existsSync()) {
+      return Image.file(
+        File(path),
+        height: height,
+        fit: fit ?? BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(height),
+      );
+    }
+
+    return _buildPlaceholder(height);
+  }
+
+  Widget _buildPlaceholder(double? height) {
+    return Container(
+      height: height ?? 120,
+      width: height ?? 120,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        Icons.restaurant_menu,
+        size: 48,
+        color: Colors.grey[400],
+      ),
+    );
   }
 
   @override
@@ -325,11 +352,14 @@ class _RecipeCardState extends State<RecipeCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10.0),
-                    child: loadImage(
-                      widget.recipe.imageUrl,
-                      height: 100,
-                      fit: BoxFit.cover,
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: loadImage(
+                        widget.recipe.imageUrl,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16.0),
@@ -462,7 +492,7 @@ class _IngredientChecklistState extends State<IngredientChecklist> {
       item.isChecked = !item.isChecked;
     });
     if (item.id != null) {
-      await DatabaseHelper.instance.updateIngredient(item);
+      await RecipeService.updateIngredient(item);
       print('Đã cập nhật trạng thái checklist cho ingredient ID: ${item.id}');
     }
   }
